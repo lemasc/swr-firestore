@@ -10,7 +10,6 @@ import { isDev } from '../helpers/is-dev'
 import { withDocumentDatesParsed } from '../helpers/doc-date-parser'
 import { deleteDocument } from './static-mutations'
 
-
 type Options<Doc extends Document = Document> = {
   /**
    * If `true`, sets up a real-time subscription to the Firestore backend.
@@ -44,7 +43,10 @@ type ListenerReturnType<Doc extends Document = Document> = {
   unsubscribe: Unsubscribe
 }
 
-export const getDocument = async <Doc extends Document = Document>(
+export const getDocument = async <
+  Data extends object = {},
+  Doc extends Document = Document<Data>
+>(
   path: string,
   {
     parseDates,
@@ -64,34 +66,33 @@ export const getDocument = async <Doc extends Document = Document>(
     ignoreFirestoreDocumentSnapshotField?: boolean
   } = empty.object
 ) => {
-  const data = await getDoc(doc(fuego.db, path))
-    .then(doc => {
-      const docData =
-        doc.data({
-          serverTimestamps: 'estimate',
-        }) ?? empty.object
-      if (
-        isDev &&
-        // @ts-ignore
-        (docData.exists || docData.id || docData.hasPendingWrites)
-      ) {
-        console.warn(
-          '[get-document] warning: Your document, ',
-          doc.id,
-          ' is using one of the following reserved fields: [exists, id, hasPendingWrites]. These fields are reserved. Please remove them from your documents.'
-        )
-      }
-      return withDocumentDatesParsed(
-        ({
-          ...docData,
-          id: doc.id,
-          exists: doc.exists,
-          hasPendingWrites: doc.metadata.hasPendingWrites,
-          __snapshot: ignoreFirestoreDocumentSnapshotField ? undefined : doc,
-        } as unknown) as Doc,
-        parseDates
+  const data = await getDoc(doc(fuego.db, path)).then((doc) => {
+    const docData =
+      doc.data({
+        serverTimestamps: 'estimate',
+      }) ?? empty.object
+    if (
+      isDev &&
+      // @ts-ignore
+      (docData.exists || docData.id || docData.hasPendingWrites)
+    ) {
+      console.warn(
+        '[get-document] warning: Your document, ',
+        doc.id,
+        ' is using one of the following reserved fields: [exists, id, hasPendingWrites]. These fields are reserved. Please remove them from your documents.'
       )
-    })
+    }
+    return withDocumentDatesParsed(
+      {
+        ...docData,
+        id: doc.id,
+        exists: doc.exists,
+        hasPendingWrites: doc.metadata.hasPendingWrites,
+        __snapshot: ignoreFirestoreDocumentSnapshotField ? undefined : doc,
+      } as unknown as Doc,
+      parseDates
+    )
+  })
 
   // update the document in any collections listening to the same document
   let collection: string | string[] = path.split(`/${data.id}`)
@@ -99,15 +100,15 @@ export const getDocument = async <Doc extends Document = Document>(
   collection.pop() // remove last item, which is the /id
   collection = collection.join('/') // rejoin the path
   if (collection) {
-    collectionCache.getSWRKeysFromCollectionPath(collection).forEach(key => {
+    collectionCache.getSWRKeysFromCollectionPath(collection).forEach((key) => {
       mutate(
         key,
         (currentState: Doc[] = empty.array): Doc[] => {
           // don't mutate the current state if it doesn't include this doc
-          if (!currentState.some(doc => doc.id === data.id)) {
+          if (!currentState.some((doc) => doc.id === data.id)) {
             return currentState
           }
-          return currentState.map(document => {
+          return currentState.map((document) => {
             if (document.id === data.id) {
               return data
             }
@@ -140,17 +141,17 @@ const createListenerAsync = async <Doc extends Document = Document>(
     ignoreFirestoreDocumentSnapshotField?: boolean
   } = {}
 ): Promise<ListenerReturnType<Doc>> => {
-  return await new Promise(resolve => {
-    const unsubscribe = onSnapshot(doc(fuego.db, path), doc => {
+  return await new Promise((resolve) => {
+    const unsubscribe = onSnapshot(doc(fuego.db, path), (doc) => {
       const docData = doc.data() ?? empty.object
       const data = withDocumentDatesParsed<Doc>(
-        ({
+        {
           ...docData,
           id: doc.id,
           exists: doc.exists,
           hasPendingWrites: doc.metadata.hasPendingWrites,
           __snapshot: ignoreFirestoreDocumentSnapshotField ? undefined : doc,
-        } as unknown) as Doc,
+        } as unknown as Doc,
         parseDates
       )
       mutate(path, data, false)
@@ -176,15 +177,15 @@ const createListenerAsync = async <Doc extends Document = Document>(
       if (collection) {
         collectionCache
           .getSWRKeysFromCollectionPath(collection)
-          .forEach(key => {
+          .forEach((key) => {
             mutate(
               key,
               (currentState: Doc[] = empty.array): Doc[] => {
                 // don't mutate the current state if it doesn't include this doc
-                if (!currentState.some(doc => doc.id && doc.id === data.id)) {
+                if (!currentState.some((doc) => doc.id && doc.id === data.id)) {
                   return currentState
                 }
-                return currentState.map(document => {
+                return currentState.map((document) => {
                   if (document.id === data.id) {
                     return data
                   }
@@ -370,34 +371,34 @@ export const useDocument = <
         })
       }
       if (!path) return null
-      return updateDoc(doc(fuego.db,path), data)
-},
-  [listen, path, connectedMutate]
+      return updateDoc(doc(fuego.db, path), data)
+    },
+    [listen, path, connectedMutate]
   )
 
-const connectedDelete = useCallback(() => {
-  return deleteDocument(path, listen)
-}, [path, listen])
+  const connectedDelete = useCallback(() => {
+    return deleteDocument(path, listen)
+  }, [path, listen])
 
-return {
-  data,
-  isValidating,
-  revalidate,
-  mutate: connectedMutate,
-  error,
-  set,
-  update,
-  loading: !data && !error,
-  deleteDocument: connectedDelete,
-  /**
-   * A function that, when called, unsubscribes the Firestore listener.
-   *
-   * The function can be null, so make sure to check that it exists before calling it.
-   *
-   * **Note**: This is not necessary to use. `useDocument` already unmounts the listener for you. This is only intended if you want to unsubscribe on your own.
-   */
-  unsubscribe: unsubscribeRef.current
-}
+  return {
+    data,
+    isValidating,
+    revalidate,
+    mutate: connectedMutate,
+    error,
+    set,
+    update,
+    loading: !data && !error,
+    deleteDocument: connectedDelete,
+    /**
+     * A function that, when called, unsubscribes the Firestore listener.
+     *
+     * The function can be null, so make sure to check that it exists before calling it.
+     *
+     * **Note**: This is not necessary to use. `useDocument` already unmounts the listener for you. This is only intended if you want to unsubscribe on your own.
+     */
+    unsubscribe: unsubscribeRef.current,
+  }
 }
 
 // const useSubscription = (path: string) => {

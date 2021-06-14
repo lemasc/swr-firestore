@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import useSWR, { mutate as mutateStatic, ConfigInterface } from 'swr'
+import useSWR, { mutate as mutateStatic, SWRConfiguration } from 'swr'
 import { fuego } from '../context'
 import { useRef, useEffect, useMemo, useCallback } from 'react'
 // import { useMemoOne as useMemo } from 'use-memo-one'
@@ -96,7 +96,10 @@ export type CollectionQueryType<Doc extends object = {}> = {
   // endBefore?: number | DocumentSnapshot
 }
 
-export const getCollection = async <Doc extends Document = Document>(
+export const getCollection = async <
+  Data extends object = {},
+  Doc extends Document = Document<Data>
+>(
   path: string,
   // queryString: string = '{}',
   query: CollectionQueryType<Doc> = {},
@@ -114,9 +117,9 @@ export const getCollection = async <Doc extends Document = Document>(
   } = empty.object
 ) => {
   const ref = createFirestoreRef(path, query)
-  const data: Doc[] = await getDocs(ref).then(querySnapshot => {
+  const data: Doc[] = await getDocs(ref).then((querySnapshot) => {
     const array: typeof data = []
-    querySnapshot.forEach(doc => {
+    querySnapshot.forEach((doc) => {
       const docData =
         doc.data({
           serverTimestamps: 'estimate',
@@ -173,7 +176,7 @@ const createFirestoreRef = <Doc extends object = {}>(
         return !!(w as WhereArray) && Array.isArray(w[0])
       }
       if (multipleConditions(where)) {
-        where.forEach(w => {
+        where.forEach((w) => {
           ref = query(ref, queryWhere(w[0] as string | FieldPath, w[1], w[2]))
         })
       } else if (typeof where[0] === 'string' && typeof where[1] === 'string') {
@@ -249,15 +252,15 @@ const createListenerAsync = async <Doc extends Document = Document>(
     ignoreFirestoreDocumentSnapshotField?: boolean
   }
 ): Promise<ListenerReturnType<Doc>> => {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const query: CollectionQueryType = JSON.parse(queryString) ?? {}
     const ref = createFirestoreRef(path, query)
     const unsubscribe = onSnapshot(
       ref,
       { includeMetadataChanges: true },
-      querySnapshot => {
+      (querySnapshot) => {
         const data: Doc[] = []
-        querySnapshot.forEach(doc => {
+        querySnapshot.forEach((doc) => {
           const docData =
             doc.data({
               serverTimestamps: 'estimate',
@@ -300,9 +303,8 @@ const createListenerAsync = async <Doc extends Document = Document>(
   })
 }
 
-export type CollectionSWROptions<
-  Doc extends Document = Document
-> = ConfigInterface<Doc[] | null>
+export type CollectionSWROptions<Doc extends Document = Document> =
+  SWRConfiguration<Doc[] | null>
 /**
  * Call a Firestore Collection
  * @template Doc
@@ -522,17 +524,17 @@ export const useCollection = <
 
       const ref = collection(fuego.db, path)
 
-      const docsToAdd: Doc[] = (dataArray.map(doc => ({
+      const docsToAdd: Doc[] = dataArray.map((doc) => ({
         ...doc,
         // generate IDs we can use that in the local cache that match the server
         id: FirestoreDoc(ref).id,
-      })) as unknown) as Doc[] // solve this annoying TS bug 😅
+      })) as unknown as Doc[] // solve this annoying TS bug 😅
 
       // add to cache
       if (!listen) {
         // we only update the local cache if we don't have a listener set up
         // why? because Firestore automatically handles this part for subscriptions
-        mutate(prevState => {
+        mutate((prevState) => {
           const state = prevState ?? empty.array
           return [...state, ...docsToAdd]
         }, false)
