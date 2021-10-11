@@ -20,13 +20,7 @@ class CollectionCache {
   }
 
   getSWRKeysFromCollectionPath(path: string) {
-    const isCollection =
-      path
-        .trim()
-        .split('/')
-        .filter(Boolean).length %
-        2 !==
-      0
+    const isCollection = path.trim().split('/').filter(Boolean).length % 2 !== 0
     if (!isCollection) {
       console.error(
         `[fuego-swr-keys-from-collection-path] error: Passed a path that was not a collection to useCollection: ${path}.`
@@ -36,7 +30,7 @@ class CollectionCache {
       this.collections[path]
         ?.map(({ key }) =>
           // if the queryString is undefined, take it out of the array
-          key.filter(keyItem => typeof keyItem === 'string')
+          key.filter((keyItem) => typeof keyItem === 'string')
         )
         .filter(Boolean) ?? empty.array
     )

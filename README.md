@@ -1,8 +1,23 @@
-# SWR + Firestore
+# SWR + Firestore (v9)
 
 ```js
 const { data } = useDocument('users/fernando')
 ```
+
+This is the fork of [swr-firestore](https://github.com/nandorojo/swr-firestore) with support for Firebase Modular SDK (v9).
+
+## Breaking changes with v0.x
+- Use the stable channel of firebase (v9.1.x)
+- Update SWR to version 1.
+- useDocument and useCollection won't return `revalidate()` [due to SWR changes](https://swr.vercel.app/blog/swr-v1#change-revalidate-to-mutate).
+- API functions renamed for similarity with the new firebase SDK.
+  * `set()` is now `setDoc()`
+  * `update()` is now `updateDoc()`
+  * `deleteDocument()` is now `deleteDoc()`
+  * `revalidateDocument()` is now `revalidateDoc()`
+  * `getDocument()` is now `getDoc()`
+  * `getCollection()` is now `getDocs()`
+- Use `getFuego()` to get the current database instance instead of importing `fuego` variable directly.
 
 **It's that easy.**
 
@@ -10,7 +25,7 @@ const { data } = useDocument('users/fernando')
 
 ⚡️ It aims to be **the fastest way to use Firestore in a React app,** both from a developer experience and app performance perspective.
 
-🍕 This library is built on top [useSWR](https://swr.now.sh), meaning you get all of its awesome benefits out-of-the-box.
+🍕 This library is built on top [useSWR](https://swr.vercel.app), meaning you get all of its awesome benefits out-of-the-box.
 
 You can now fetch, add, and mutate Firestore data with zero boilerplate.
 
@@ -46,17 +61,14 @@ _"With SWR, components will get a stream of data updates constantly and automati
 - Suspense mode
 - Minimal API
 
-## ⭐️
-
-If you like this library, give it star and let me know on [Twitter](https://twitter.com/fernandotherojo)!
 
 ## Installation
 
 ```sh
-yarn add @nandorojo/swr-firestore
+yarn add swr-firestore-v9
 
 # or
-npm install @nandorojo/swr-firestore
+npm install swr-firestore-v9
 ```
 
 Install firebase:
@@ -75,8 +87,6 @@ npm i firebase
 
 In the root of your app, **create an instance of Fuego** and pass it to the **FuegoProvider**.
 
-If you're using Firebase v8, see [this solution](https://github.com/nandorojo/swr-firestore/issues/59#issuecomment-719950071) for creating your instance of `Fuego`.
-
 If you're using `next.js`, this goes in your `pages/_app.js` file.
 
 `App.js`
@@ -85,7 +95,7 @@ If you're using `next.js`, this goes in your `pages/_app.js` file.
 import React from 'react'
 import 'firebase/firestore'
 import 'firebase/auth'
-import { Fuego, FuegoProvider } from '@nandorojo/swr-firestore'
+import { Fuego, FuegoProvider } from 'swr-firestore-v9'
 
 const firebaseConfig = {
   // put yours here
@@ -114,7 +124,7 @@ _Assuming you've already completed the setup..._
 
 ```js
 import React from 'react'
-import { useDocument } from '@nandorojo/swr-firestore'
+import { useDocument } from 'swr-firestore-v9'
 import { Text } from 'react-native'
 
 export default function User() {
@@ -134,7 +144,7 @@ export default function User() {
 
 ```js
 import React from 'react'
-import { useCollection } from '@nandorojo/swr-firestore'
+import { useCollection } from 'swr-firestore-v9'
 import { Text } from 'react-native'
 
 export default function UserList() {
@@ -347,7 +357,7 @@ Video [here](https://imgur.com/a/o9AlI4N).
 
 ```typescript
 import React from 'react'
-import { fuego, useCollection } from '@nandorojo/swr-firestore'
+import { fuego, useCollection } from 'swr-firestore-v9'
 
 const collection = 'dump'
 const limit = 1
@@ -415,7 +425,7 @@ You'll rely on `useDocument` to query documents.
 
 ```js
 import React from 'react'
-import { useDocument } from '@nandorojo/swr-firestore'
+import { useDocument } from 'swr-firestore-v9'
 
 const user = { id: 'Fernando' }
 export default () => {
@@ -438,15 +448,15 @@ import {
   useDocument,
   useCollection,
   useCollectionGroup, // 👋 new!
-  revalidateDocument,
+  revalidateDoc,
   revalidateCollection,
   // these all update BOTH Firestore & the local cache ⚡️
-  set, // set a firestore document
-  update, // update a firestore document
-  fuego, // get the firebase instance used by this lib
-  getCollection, // prefetch a collection, without being hooked into SWR or React
-  getDocument, // prefetch a document, without being hooked into SWR or React
-} from '@nandorojo/swr-firestore'
+  setDoc, // set a firestore document
+  updateDoc, // update a firestore document
+  getFuego, // get the firebase instance used by this lib
+  getDocs, // prefetch a collection, without being hooked into SWR or React
+  getDoc, // prefetch a document, without being hooked into SWR or React
+} from 'swr-firestore-v9'
 ```
 
 ## `useDocument(path, options)`
@@ -660,23 +670,22 @@ To see how to use it, follow the instructions from [`useCollection`](#useCollect
 
 See the Firestore [docs on collecttion groups](https://firebase.google.com/docs/firestore/query-data/queries) to learn more.
 
-## `set(path, data, SetOptions?)`
+## `setDoc(path, data, SetOptions?)`
 
-Extends the `firestore` document `set` function.
+Extends the `firestore` document [`setDoc` function](https://firebase.google.com/docs/firestore/manage-data/add-data#set_a_document).
 
 - You can call this when you want to edit your document.
-- It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular Firestore `set` function.
-- The second argument is the same as the second argument for [Firestore `set`](https://firebase.google.com/docs/firestore/manage-data/add-data#set_a_document).
+- It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular Firestore `setDoc` function.
 
-This is useful if you want to `set` a document in a component that isn't connected to the `useDocument` hook.
+This is useful if you want to set a document in a component that isn't connected to the `useDocument` hook.
 
-## `update(path, data)`:
+## `updateDoc(path, data)`:
 
-Extends the Firestore document [`update` function](https://firebase.google.com/docs/firestore/manage-data/add-data#update-data).
+Extends the Firestore document [`updateDoc` function](https://firebase.google.com/docs/firestore/manage-data/add-data#update-data).
 
-- It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular `set` function.
+- It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular `updateDoc` function.
 
-This is useful if you want to `update` a document in a component that isn't connected to the `useDocument` hook.
+This is useful if you want to update a document in a component that isn't connected to the `useDocument` hook.
 
 <!--
 ## `add(path, data)`:
@@ -687,14 +696,14 @@ Extends the Firestore document [`add` function](https://firebase.google.com/docs
 - Use this **instead** of `firebase.firestore().collection('users').add(data)`
 -->
 
-## `deleteDocument(path, ignoreLocalMutations = false)`
+## `deleteDoc(path, ignoreLocalMutations = false)`
 
-Extends the Firestore document [`delete` function](https://firebase.google.com/docs/firestore/manage-data/delete-data).
+Extends the Firestore document [`deleteDoc` function](https://firebase.google.com/docs/firestore/manage-data/delete-data).
 
 - It also updates the local cache using SWR's `mutate` by deleting your document from this query and all collection queries that have fetched this document. This will prove highly convenient over the regular `delete` function from Firestore.
 - Second argument is a boolean that defaults to false. If `true`, it will not update the local cache, and instead only send delete to Firestore.
 
-## `revalidateDocument(path)`
+## `revalidateDoc(path)`
 
 Refetch a document from Firestore, and update the local cache. Useful if you want to update a given document without calling the connected `revalidate` function from use `useDocument` hook.
 
@@ -707,22 +716,11 @@ Refetch a collection query from Firestore, and update the local cache. Useful if
 - Only argument is the Firestore document path (ex: `users`)
 - **Note** Calling `revalidateCollection` will update _all_ collection queries. If you're paginating data for a given collection, you probably won't want to use this function for that collection.
 
-## `fuego`
+## `getFuego()`
 
-The current firebase instance used by this library. Exports the following fields:
+Returns the current firebase instance used by this library. Throws an error if the instance hasn't initialized yet. 
 
-- `db`: the current firestore collection instance
-- `auth`: the `firebase.auth` variable.
-
-```js
-import { fuego } from '@nandorojo/swr-firestore'
-
-fuego.db.doc('users/Fernando').get()
-
-fuego.auth().currentUser?.uid
-```
-
-## `getDocument(path, options?)`
+## `getDoc(path, options?)`
 
 If you don't want to use `useDocument` in a component, you can use this function outside of the React scope.
 
@@ -737,7 +735,7 @@ If you don't want to use `useDocument` in a component, you can use this function
 
 A promise with the firestore doc and some useful fields. See the [useDocument](#useDocument) `data` return type for more info.
 
-## `getCollection(path, query?, options?)`
+## `getDocs(path, query?, options?)`
 
 If you don't want to use `useCollection` in a component, you can use this function outside of the React scope.
 

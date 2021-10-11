@@ -1,14 +1,26 @@
-import useSWR, { mutate, ConfigInterface } from 'swr'
-import type { SetOptions, FieldValue, Unsubscribe } from 'firebase/firestore'
-import { doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore'
-import { fuego } from '../context'
+import useSWR, { mutate, SWRConfiguration } from 'swr'
+import type {
+  SetOptions,
+  Unsubscribe,
+  DocumentData,
+  PartialWithFieldValue,
+  UpdateData,
+} from '@firebase/firestore'
+import {
+  doc,
+  getDoc as _getDoc,
+  onSnapshot,
+  setDoc as setDoc,
+  updateDoc as updateDoc,
+} from '@firebase/firestore'
+import { fuego } from '../context/Provider'
 import { useRef, useEffect, useCallback } from 'react'
 import { empty } from '../helpers/empty'
-import { AllowType, Document } from '../types/Document'
+import { Document } from '../types/Document'
 import { collectionCache } from '../classes/Cache'
 import { isDev } from '../helpers/is-dev'
 import { withDocumentDatesParsed } from '../helpers/doc-date-parser'
-import { deleteDocument } from './static-mutations'
+import { deleteDoc, shouldMerge } from './static-mutations'
 
 type Options<Doc extends Document = Document> = {
   /**
@@ -36,15 +48,15 @@ type Options<Doc extends Document = Document> = {
    * Default: `true`
    */
   ignoreFirestoreDocumentSnapshotField?: boolean
-} & ConfigInterface<Doc | null>
+} & SWRConfiguration<Doc | null>
 
 type ListenerReturnType<Doc extends Document = Document> = {
   initialData: Doc
   unsubscribe: Unsubscribe
 }
 
-export const getDocument = async <
-  Data extends object = {},
+export const getDoc = async <
+  Data extends DocumentData,
   Doc extends Document = Document<Data>
 >(
   path: string,
@@ -66,18 +78,17 @@ export const getDocument = async <
     ignoreFirestoreDocumentSnapshotField?: boolean
   } = empty.object
 ) => {
-  const data = await getDoc(doc(fuego.db, path)).then((doc) => {
-    const docData =
-      doc.data({
-        serverTimestamps: 'estimate',
-      }) ?? empty.object
+  const data = await _getDoc(doc(fuego.db, path)).then((doc) => {
+    const docData = doc.data({
+      serverTimestamps: 'estimate',
+    })
     if (
       isDev &&
-      // @ts-ignore
+      docData &&
       (docData.exists || docData.id || docData.hasPendingWrites)
     ) {
       console.warn(
-        '[get-document] warning: Your document, ',
+        '[get-doc] warning: Your document, ',
         doc.id,
         ' is using one of the following reserved fields: [exists, id, hasPendingWrites]. These fields are reserved. Please remove them from your documents.'
       )
@@ -143,7 +154,7 @@ const createListenerAsync = async <Doc extends Document = Document>(
 ): Promise<ListenerReturnType<Doc>> => {
   return await new Promise((resolve) => {
     const unsubscribe = onSnapshot(doc(fuego.db, path), (doc) => {
-      const docData = doc.data() ?? empty.object
+      const docData = doc.data()
       const data = withDocumentDatesParsed<Doc>(
         {
           ...docData,
@@ -157,7 +168,7 @@ const createListenerAsync = async <Doc extends Document = Document>(
       mutate(path, data, false)
       if (
         isDev &&
-        // @ts-ignore
+        docData &&
         (docData.exists || docData.id || docData.hasPendingWrites)
       ) {
         console.warn(
@@ -207,7 +218,7 @@ const createListenerAsync = async <Doc extends Document = Document>(
 }
 
 export const useDocument = <
-  Data extends object = {},
+  Data extends DocumentData,
   Doc extends Document = Document<Data>
 >(
   path: string | null,
@@ -278,7 +289,7 @@ export const useDocument = <
         unsubscribeRef.current = unsubscribe
         return initialData
       }
-      const data = await getDocument<Doc>(path, {
+      const data = await getDoc<Doc>(path, {
         parseDates: datesToParse.current,
         ignoreFirestoreDocumentSnapshotField: shouldIgnoreSnapshot.current,
       })
@@ -287,7 +298,7 @@ export const useDocument = <
     swrOptions
   )
 
-  const { data, isValidating, revalidate, mutate: connectedMutate, error } = swr
+  const { data, isValidating, mutate: connectedMutate, error } = swr
 
   // if listen changes,
   // we run revalidate.
@@ -307,9 +318,9 @@ export const useDocument = <
 
   // this MUST be after the previous effect to avoid duplicate initial validations.
   // only happens on updates, not initial mount.
-  const revalidateRef = useRef(swr.revalidate)
+  const revalidateRef = useRef(swr.mutate)
   useEffect(() => {
-    revalidateRef.current = swr.revalidate
+    revalidateRef.current = swr.mutate
   })
 
   useEffect(() => {
@@ -330,15 +341,14 @@ export const useDocument = <
    * - The second argument is the same as the second argument for [Firestore `set`](https://firebase.google.com/docs/firestore/manage-data/add-data#set_a_document).
    */
   const set = useCallback(
-    (data: Partial<AllowType<Data, FieldValue>>, options?: SetOptions) => {
+    (data: PartialWithFieldValue<Data>, options: SetOptions = {}) => {
       if (!listen) {
         // we only update the local cache if we don't have a listener set up
         // Why? firestore handles this for us for listeners.
         // @ts-ignore
-        connectedMutate((prevState = empty.object) => {
+        connectedMutate((prevState) => {
           // default we set merge to be false. this is annoying, but follows Firestore's preference.
-          // @ts-ignore
-          if (!options?.merge) return data
+          if (!shouldMerge(options)) return data
           return {
             ...prevState,
             ...data,
@@ -346,9 +356,6 @@ export const useDocument = <
         })
       }
       if (!path) return null
-      if (!options) {
-        return setDoc(doc(fuego.db, path), data)
-      }
       return setDoc(doc(fuego.db, path), data, options)
     },
     [path, listen, connectedMutate]
@@ -359,7 +366,7 @@ export const useDocument = <
    * - It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular `set` function.
    */
   const update = useCallback(
-    (data: Partial<AllowType<Data, FieldValue>>) => {
+    (data: UpdateData<Data>) => {
       if (!listen) {
         // we only update the local cache if we don't have a listener set up
         // @ts-ignore
@@ -377,13 +384,12 @@ export const useDocument = <
   )
 
   const connectedDelete = useCallback(() => {
-    return deleteDocument(path, listen)
+    return deleteDoc(path, listen)
   }, [path, listen])
 
   return {
     data,
     isValidating,
-    revalidate,
     mutate: connectedMutate,
     error,
     set,
@@ -400,24 +406,3 @@ export const useDocument = <
     unsubscribe: unsubscribeRef.current,
   }
 }
-
-// const useSubscription = (path: string) => {
-//   const unsubscribeRef = useRef<
-//     ReturnType<typeof createListener>['unsubscribe'] | null
-//   >(null)
-
-//   const swr = useSWR([path], path => {
-//     const { unsubscribe, latestData } = createListener(path)
-//     unsubscribeRef.current = unsubscribe
-//     return latestData()
-//   })
-
-//   useEffect(() => {
-//     return () => {
-//       if (unsubscribeRef.current) {
-//         unsubscribeRef.current()
-//       }
-//     }
-//   }, [path])
-//   return swr
-// }

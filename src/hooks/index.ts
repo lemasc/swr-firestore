@@ -1,4 +1,14 @@
-export * from './use-swr-document'
-export * from './use-swr-collection'
-export * from './static-mutations'
-export * from './use-swr-collection-group'
+export { getDoc, useDocument } from './use-swr-document'
+export {
+  getDocs,
+  useCollection,
+  CollectionSWROptions,
+  CollectionQueryType,
+} from './use-swr-collection'
+export {
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  revalidateDoc,
+  revalidateCollection,
+} from './static-mutations'
