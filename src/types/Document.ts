@@ -1,11 +1,8 @@
-import type { QueryDocumentSnapshot } from 'firebase/firestore'
+import type { DocumentData, QueryDocumentSnapshot } from '@firebase/firestore'
 
-export type Document<T = {}> = T & {
+export type Document<T = DocumentData> = T & {
   id: string
   exists?: boolean
   hasPendingWrites?: boolean
   __snapshot?: QueryDocumentSnapshot
-}
-export type AllowType<O extends object, Allowed> = {
-  [K in keyof O]: O[K] | Allowed
 }

@@ -1,8 +1,21 @@
-# SWR + Firestore
+# SWR + Firestore (v9)
 
 ```js
 const { data } = useDocument('users/fernando')
 ```
+## Breaking changes with v0.x
+- Use the stable channel of firebase. (v9.1.x)
+- Update SWR to version 1.0.
+- [`revalidate` function is deprecated.](https://swr.vercel.app/blog/swr-v1#change-revalidate-to-mutate) 
+- Some API are renamed to match the new SDKs.
+   * `getDocument()` is now `getDoc()`
+   * `set()` is now `setDoc()`
+   * `update()` is now `updateDoc()`
+   * `deleteDocument()` is now `deleteDoc()`
+   * `revalidateDocument()` is now `revalidateDoc()`
+ - Many changes might coming soon, carefully check before update!
+
+This is the fork of [swr-firestore](https://github.com/nandorojo/swr-firestore), with changes to compatible with the Firebase Modular SDK (v9).
 
 **It's that easy.**
 
@@ -28,7 +41,6 @@ You can now fetch, add, and mutate Firestore data with zero boilerplate.
 - No more parsing `document.data()` from Firestore requests
 - Server-side rendering (SSR or SSG) with Next.js [(example)](https://github.com/nandorojo/swr-firestore/issues/17)
 - Automatic date parsing (no more `.toDate()`)
-- Firebase v8 support (see [#59](https://github.com/nandorojo/swr-firestore/issues/59#issuecomment-719950071))
 
 ...along with the features touted by Vercel's incredible [SWR](https://github.com/zeit/swr#introduction) library:
 
@@ -46,17 +58,13 @@ _"With SWR, components will get a stream of data updates constantly and automati
 - Suspense mode
 - Minimal API
 
-## ⭐️
-
-If you like this library, give it star and let me know on [Twitter](https://twitter.com/fernandotherojo)!
-
 ## Installation
 
 ```sh
-yarn add @nandorojo/swr-firestore
+yarn add swr-firestore-v9
 
 # or
-npm install @nandorojo/swr-firestore
+npm install swr-firestore-v9
 ```
 
 Install firebase:
@@ -74,8 +82,6 @@ npm i firebase
 ## Set up
 
 In the root of your app, **create an instance of Fuego** and pass it to the **FuegoProvider**.
-
-If you're using Firebase v8, see [this solution](https://github.com/nandorojo/swr-firestore/issues/59#issuecomment-719950071) for creating your instance of `Fuego`.
 
 If you're using `next.js`, this goes in your `pages/_app.js` file.
 
@@ -446,7 +452,7 @@ import {
   fuego, // get the firebase instance used by this lib
   getCollection, // prefetch a collection, without being hooked into SWR or React
   getDocument, // prefetch a document, without being hooked into SWR or React
-} from '@nandorojo/swr-firestore'
+} from 'swr-firestore-v9'
 ```
 
 ## `useDocument(path, options)`
@@ -662,7 +668,7 @@ See the Firestore [docs on collecttion groups](https://firebase.google.com/docs/
 
 ## `set(path, data, SetOptions?)`
 
-Extends the `firestore` document `set` function.
+Extends the `firestore` document `setDoc` function.
 
 - You can call this when you want to edit your document.
 - It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular Firestore `set` function.
@@ -670,9 +676,9 @@ Extends the `firestore` document `set` function.
 
 This is useful if you want to `set` a document in a component that isn't connected to the `useDocument` hook.
 
-## `update(path, data)`:
+## `updateDoc(path, data)`:
 
-Extends the Firestore document [`update` function](https://firebase.google.com/docs/firestore/manage-data/add-data#update-data).
+Extends the Firestore document [`updateDoc` function](https://firebase.google.com/docs/firestore/manage-data/add-data#update-data).
 
 - It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular `set` function.
 
@@ -687,14 +693,14 @@ Extends the Firestore document [`add` function](https://firebase.google.com/docs
 - Use this **instead** of `firebase.firestore().collection('users').add(data)`
 -->
 
-## `deleteDocument(path, ignoreLocalMutations = false)`
+## `deleteDoc(path, ignoreLocalMutations = false)`
 
-Extends the Firestore document [`delete` function](https://firebase.google.com/docs/firestore/manage-data/delete-data).
+Extends the Firestore document [`deleteDoc` function](https://firebase.google.com/docs/firestore/manage-data/delete-data).
 
 - It also updates the local cache using SWR's `mutate` by deleting your document from this query and all collection queries that have fetched this document. This will prove highly convenient over the regular `delete` function from Firestore.
 - Second argument is a boolean that defaults to false. If `true`, it will not update the local cache, and instead only send delete to Firestore.
 
-## `revalidateDocument(path)`
+## `revalidateDoc(path)`
 
 Refetch a document from Firestore, and update the local cache. Useful if you want to update a given document without calling the connected `revalidate` function from use `useDocument` hook.
 
@@ -707,22 +713,12 @@ Refetch a collection query from Firestore, and update the local cache. Useful if
 - Only argument is the Firestore document path (ex: `users`)
 - **Note** Calling `revalidateCollection` will update _all_ collection queries. If you're paginating data for a given collection, you probably won't want to use this function for that collection.
 
-## `fuego`
+## `getFuego`
 
-The current firebase instance used by this library. Exports the following fields:
+Returns the current firebase instance. Exports the `db` field containing the database instance.
+Throws an error if the Fuego instance wasn't initialized.
 
-- `db`: the current firestore collection instance
-- `auth`: the `firebase.auth` variable.
-
-```js
-import { fuego } from '@nandorojo/swr-firestore'
-
-fuego.db.doc('users/Fernando').get()
-
-fuego.auth().currentUser?.uid
-```
-
-## `getDocument(path, options?)`
+## `getDoc(path, options?)`
 
 If you don't want to use `useDocument` in a component, you can use this function outside of the React scope.
 

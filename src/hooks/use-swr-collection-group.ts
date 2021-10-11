@@ -1,3 +1,4 @@
+import { DocumentData } from '@firebase/firestore'
 import { Document } from '../types'
 import {
   CollectionQueryType,
@@ -5,14 +6,12 @@ import {
   useCollection,
 } from './use-swr-collection'
 
-// type UseCollection = Parameters<typeof useCollection>
-
 /**
  *
  * 🚨 Experimental. I recommend only using this only to test for now. There are some edge cases still being figured out for caching collection groups.
  */
 export const useExperimentalCollectionGroup = <
-  Data extends object = {},
+  Data extends DocumentData,
   Doc extends Document = Document<Data>
 >(
   collection: string | null,
@@ -33,7 +32,7 @@ export const useExperimentalCollectionGroup = <
 }
 
 export const useCollectionGroup = <
-  Data extends object = {},
+  Data extends DocumentData,
   Doc extends Document = Document<Data>
 >(
   collection: string | null,

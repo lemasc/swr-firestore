@@ -1,103 +1,74 @@
-/* eslint-disable @typescript-eslint/ban-types */
 import useSWR, { mutate as mutateStatic, SWRConfiguration } from 'swr'
-import { fuego } from '../context'
+import { fuego } from '../context/Provider'
 import { useRef, useEffect, useMemo, useCallback } from 'react'
-// import { useMemoOne as useMemo } from 'use-memo-one'
 import { empty } from '../helpers/empty'
 import { collectionCache } from '../classes/Cache'
 
-// type Document<T = {}> = T & { id: string }
-
 import type {
+  DocumentData,
   FieldPath,
   OrderByDirection,
   WhereFilterOp,
   Query,
   Unsubscribe,
-} from 'firebase/firestore'
+  QueryConstraint,
+} from '@firebase/firestore'
 import {
   query,
-  getDocs,
+  getDocs as _getDocs,
   onSnapshot,
   collection,
   collectionGroup,
-  orderBy as queryOrderBy,
-  where as queryWhere,
-  startAt as queryStartAt,
-  startAfter as queryStartAfter,
-  endBefore as queryEndBefore,
-  endAt as queryEndAt,
-  limit as queryLimit,
-  doc as FirestoreDoc,
+  orderBy as _orderBy,
+  where as _where,
+  startAt as _startAt,
+  startAfter as _startAfter,
+  endBefore as _endBefore,
+  endAt as _endAt,
+  limit as _limit,
+  doc as _doc,
   writeBatch,
-} from 'firebase/firestore'
+} from '@firebase/firestore'
 import { isDev } from '../helpers/is-dev'
 import { withDocumentDatesParsed } from '../helpers/doc-date-parser'
 import { Document } from '../types'
 
-type KeyHack = string & {} // hack to also allow strings
+type KeyHack = string & DocumentData // hack to also allow strings
 
 // here we get the "key" from our data, to add intellisense for any "orderBy" in the queries and such.
-type OrderByArray<Doc extends object = {}, Key = keyof Doc> = [
+type OrderByArray<Doc extends DocumentData, Key = keyof Doc> = [
   Key | FieldPath | KeyHack,
   OrderByDirection
 ]
-type OrderByItem<Doc extends object = {}, Key = keyof Doc> =
+type OrderByItem<Doc extends DocumentData, Key = keyof Doc> =
   | OrderByArray<Doc>
   | Key
   | KeyHack
-type OrderByType<Doc extends object = {}> =
+type OrderByType<Doc extends DocumentData> =
   | OrderByItem<Doc>
   | OrderByArray<Doc>[]
 
-type WhereItem<Doc extends object = {}, Key = keyof Doc> = [
+type WhereItem<Doc extends DocumentData, Key = keyof Doc> = [
   Key | FieldPath | KeyHack,
   WhereFilterOp,
   unknown
 ]
-type WhereArray<Doc extends object = {}> = WhereItem<Doc>[]
-type WhereType<Doc extends object = {}> = WhereItem<Doc> | WhereArray<Doc>
+type WhereArray<Doc extends DocumentData> = WhereItem<Doc>[]
+type WhereType<Doc extends DocumentData> = WhereItem<Doc> | WhereArray<Doc>
 
-export type CollectionQueryType<Doc extends object = {}> = {
+export type CollectionQueryType<Doc extends DocumentData> = {
   limit?: number
   orderBy?: OrderByType<Doc>
   where?: WhereType<Doc>
   isCollectionGroup?: boolean
-
-  /**
-   * For now, this can only be a number, since it has to be JSON serializable.
-   *
-   * **TODO** allow DocumentSnapshot here too. This will probably be used with a useStaticCollection hook in the future.
-   */
   startAt?: number
-  /**
-   * For now, this can only be a number, since it has to be JSON serializable.
-   *
-   * **TODO** allow DocumentSnapshot here too. This will probably be used with a useStaticCollection hook in the future.
-   */
   endAt?: number
-  /**
-   * For now, this can only be a number, since it has to be JSON serializable.
-   *
-   * **TODO** allow DocumentSnapshot here too. This will probably be used with a useStaticCollection hook in the future.
-   */
   startAfter?: number
-  /**
-   * For now, this can only be a number, since it has to be JSON serializable.
-   *
-   * **TODO** allow DocumentSnapshot here too. This will probably be used with a useStaticCollection hook in the future.
-   */
   endBefore?: number
-
-  // THESE ARE NOT JSON SERIALIZABLE
-  // startAt?: number | DocumentSnapshot
-  // endAt?: number | DocumentSnapshot
-  // startAfter?: number | DocumentSnapshot
-  // endBefore?: number | DocumentSnapshot
 }
 
-export const getCollection = async <
-  Data extends object = {},
+export const getDocs = async <
+  Data extends DocumentData,
   Doc extends Document = Document<Data>
 >(
   path: string,
@@ -117,7 +88,7 @@ export const getCollection = async <
   } = empty.object
 ) => {
   const ref = createFirestoreRef(path, query)
-  const data: Doc[] = await getDocs(ref).then((querySnapshot) => {
+  const data: Doc[] = await _getDocs(ref).then((querySnapshot) => {
     const array: typeof data = []
     querySnapshot.forEach((doc) => {
       const docData =
@@ -150,7 +121,7 @@ export const getCollection = async <
   return data
 }
 
-const createFirestoreRef = <Doc extends object = {}>(
+const createFirestoreRef = <Doc extends DocumentData>(
   path: string,
   {
     where,
@@ -162,73 +133,60 @@ const createFirestoreRef = <Doc extends object = {}>(
     endBefore,
     isCollectionGroup,
   }: CollectionQueryType<Doc>
-) =>
-  // { isCollectionGroup = false }: { isCollectionGroup?: boolean } = empty.object
-  {
-    let ref: Query = collection(fuego.db, path)
-
-    if (isCollectionGroup) {
-      ref = collectionGroup(fuego.db, path)
-    }
-
-    if (where) {
-      function multipleConditions(w: WhereType<Doc>): w is WhereArray<Doc> {
-        return !!(w as WhereArray) && Array.isArray(w[0])
-      }
-      if (multipleConditions(where)) {
-        where.forEach((w) => {
-          ref = query(ref, queryWhere(w[0] as string | FieldPath, w[1], w[2]))
-        })
-      } else if (typeof where[0] === 'string' && typeof where[1] === 'string') {
-        ref = query(ref, queryWhere(where[0], where[1], where[2]))
-      }
-    }
-
-    if (orderBy) {
-      if (typeof orderBy === 'string') {
-        ref = query(ref, queryOrderBy(orderBy))
-      } else if (Array.isArray(orderBy)) {
-        function multipleOrderBy(
-          o: OrderByType<Doc>
-        ): o is OrderByArray<Doc>[] {
-          return Array.isArray((o as OrderByArray<Doc>[])[0])
-        }
-        if (multipleOrderBy(orderBy)) {
-          orderBy.forEach(([order, direction]) => {
-            ref = query(
-              ref,
-              queryOrderBy(order as string | FieldPath, direction)
-            )
-          })
-        } else {
-          const [order, direction] = orderBy
-          ref = query(ref, queryOrderBy(order as string | FieldPath, direction))
-        }
-      }
-    }
-
-    if (startAt) {
-      ref = query(ref, queryStartAt(startAt))
-    }
-
-    if (endAt) {
-      ref = query(ref, queryEndAt(endAt))
-    }
-
-    if (startAfter) {
-      ref = query(ref, queryStartAfter(startAfter))
-    }
-
-    if (endBefore) {
-      ref = query(ref, queryEndBefore(endBefore))
-    }
-
-    if (limit) {
-      ref = query(ref, queryLimit(limit))
-    }
-
-    return ref
+) => {
+  let ref: Query = collection(fuego.db, path)
+  const queries: QueryConstraint[] = []
+  if (isCollectionGroup) {
+    ref = collectionGroup(fuego.db, path)
   }
+
+  if (where) {
+    const multipleConditions = (w: WhereType<Doc>): w is WhereArray<Doc> => {
+      return !!(w as WhereArray<Doc>) && Array.isArray(w[0])
+    }
+    ;(multipleConditions(where) ? where : [where]).forEach((w) =>
+      queries.push(_where(w[0] as string, w[1], w[2]))
+    )
+  }
+
+  if (orderBy) {
+    if (typeof orderBy === 'string') {
+      queries.push(_orderBy(orderBy))
+    } else if (Array.isArray(orderBy)) {
+      const multipleOrderBy = (
+        o: OrderByType<Doc>
+      ): o is OrderByArray<Doc>[] => {
+        return Array.isArray((o as OrderByArray<Doc>[])[0])
+      }
+      ;(multipleOrderBy(orderBy) ? orderBy : [orderBy]).forEach(
+        ([order, direction]) =>
+          queries.push(_orderBy(order as string | FieldPath, direction))
+      )
+    }
+  }
+
+  if (startAt) {
+    queries.push(_startAt(startAt))
+  }
+
+  if (endAt) {
+    queries.push(_endAt(endAt))
+  }
+
+  if (startAfter) {
+    queries.push(_startAfter(startAfter))
+  }
+
+  if (endBefore) {
+    queries.push(_endBefore(endBefore))
+  }
+
+  if (limit) {
+    queries.push(_limit(limit))
+  }
+
+  return queries.length > 0 ? query(ref, ...queries) : ref
+}
 
 type ListenerReturnType<Doc extends Document = Document> = {
   initialData: Doc[] | null
@@ -253,7 +211,7 @@ const createListenerAsync = async <Doc extends Document = Document>(
   }
 ): Promise<ListenerReturnType<Doc>> => {
   return new Promise((resolve) => {
-    const query: CollectionQueryType = JSON.parse(queryString) ?? {}
+    const query: CollectionQueryType<Doc> = JSON.parse(queryString) ?? {}
     const ref = createFirestoreRef(path, query)
     const unsubscribe = onSnapshot(
       ref,
@@ -313,7 +271,7 @@ export type CollectionSWROptions<Doc extends Document = Document> =
  * @param [options] - Dictionary with option `listen`. If true, it will open a socket listener. Also takes any of SWR's options.
  */
 export const useCollection = <
-  Data extends object = {},
+  Data extends DocumentData,
   Doc extends Document = Document<Data>
 >(
   path: string | null,
@@ -455,7 +413,7 @@ export const useCollection = <
         return initialData
       }
 
-      const data = await getCollection<Doc>(
+      const data = await getDocs<Doc>(
         path,
         JSON.parse(queryString) as CollectionQueryType<Doc>,
         {
@@ -486,9 +444,9 @@ export const useCollection = <
 
   // this MUST be after the previous effect to avoid duplicate initial validations.
   // only happens on updates, not initial mounting
-  const revalidateRef = useRef(swr.revalidate)
+  const revalidateRef = useRef(swr.mutate)
   useEffect(() => {
-    revalidateRef.current = swr.revalidate
+    revalidateRef.current = swr.mutate
   })
 
   useEffect(() => {
@@ -507,10 +465,11 @@ export const useCollection = <
   // add the collection to the cache,
   // so that we can mutate it from document calls later
   useEffect(() => {
+    console.log(path, memoQueryString)
     if (path) collectionCache.addCollectionToCache(path, memoQueryString)
   }, [path, memoQueryString])
 
-  const { data, isValidating, revalidate, mutate, error } = swr
+  const { data, isValidating, mutate, error } = swr
 
   /**
    * `add(data)`: Extends the Firestore document [`add` function](https://firebase.google.com/docs/firestore/manage-data/add-data).
@@ -527,7 +486,7 @@ export const useCollection = <
       const docsToAdd: Doc[] = dataArray.map((doc) => ({
         ...doc,
         // generate IDs we can use that in the local cache that match the server
-        id: FirestoreDoc(ref).id,
+        id: _doc(ref).id,
       })) as unknown as Doc[] // solve this annoying TS bug 😅
 
       // add to cache
@@ -545,7 +504,7 @@ export const useCollection = <
 
       docsToAdd.forEach(({ id, ...doc }) => {
         // take the ID out of the document
-        batch.set(FirestoreDoc(ref, id), doc)
+        batch.set(_doc(ref, id), doc)
       })
 
       return batch.commit()
@@ -556,7 +515,6 @@ export const useCollection = <
   return {
     data,
     isValidating,
-    revalidate,
     mutate,
     error,
     add,

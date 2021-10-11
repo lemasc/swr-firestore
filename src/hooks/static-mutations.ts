@@ -1,9 +1,17 @@
-/* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { mutate } from 'swr'
-import type { SetOptions } from 'firebase/firestore'
-import { doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore'
-import { fuego } from '../context'
+import type {
+  DocumentData,
+  PartialWithFieldValue,
+  SetOptions,
+  UpdateData,
+} from '@firebase/firestore'
+import {
+  doc,
+  setDoc as _setDoc,
+  updateDoc as _updateDoc,
+  deleteDoc as _deleteDoc,
+} from '@firebase/firestore'
+import { fuego } from '../context/Provider'
 import { empty } from '../helpers/empty'
 import { collectionCache } from '../classes/Cache'
 import { Document } from '../types/Document'
@@ -12,12 +20,16 @@ type MergeType = {
   merge?: boolean
 }
 
+const shouldMerge = (options: SetOptions | undefined): options is MergeType => {
+  return !!(options as MergeType)?.merge
+}
+
 /**
  * Function that, when called, refreshes all queries that match this document path.
  *
  * This can be useful for a pull to refresh that isn't on the same screen as the `useCollection` hook, for example.
  */
-const revalidateDocument = (path: string) => {
+const revalidateDoc = (path: string) => {
   return mutate(path)
 }
 
@@ -34,10 +46,13 @@ const revalidateCollection = (path: string) => {
   return Promise.all(promises)
 }
 
-const set = <Data extends object = {}, Doc extends Document = Document<Data>>(
+const setDoc = <
+  Data extends DocumentData,
+  Doc extends Document = Document<Data>
+>(
   path: string | null,
-  data: Partial<Data>,
-  options?: SetOptions,
+  data: PartialWithFieldValue<Data>,
+  options: SetOptions = {},
   /**
    * If true, the local cache won't be updated. Default `false`.
    */
@@ -49,16 +64,11 @@ const set = <Data extends object = {}, Doc extends Document = Document<Data>>(
 
   if (!isDocument)
     throw new Error(
-      `[@nandorojo/swr-firestore] error: called set() function with path: ${path}. This is not a valid document path. 
+      `[@nandorojo/swr-firestore] error: called setDoc() function with path: ${path}. This is not a valid document path. 
       
 data: ${JSON.stringify(data)}`
     )
 
-  const shouldMerge = (
-    options: SetOptions | undefined
-  ): options is MergeType => {
-    return !!(options as MergeType)?.merge
-  }
   if (!ignoreLocalMutation) {
     mutate(
       path,
@@ -89,7 +99,7 @@ data: ${JSON.stringify(data)}`
         }
         return currentState.map((document = empty.object as Doc) => {
           if (document.id === docId) {
-            if (shouldMerge(options)) return document
+            if (!shouldMerge(options)) return document
             return { ...document, ...data }
           }
           return document
@@ -98,18 +108,15 @@ data: ${JSON.stringify(data)}`
       false
     )
   })
-  if (!options) {
-    return setDoc(doc(fuego.db, path), data)
-  }
-  return setDoc(doc(fuego.db, path), data, options)
+  return _setDoc(doc(fuego.db, path), data, options)
 }
 
-const update = <
-  Data extends object = {},
+const updateDoc = <
+  Data extends DocumentData,
   Doc extends Document = Document<Data>
 >(
   path: string | null,
-  data: Partial<Data>,
+  data: UpdateData<Data>,
   /**
    * If true, the local cache won't be updated. Default `false`.
    */
@@ -160,11 +167,11 @@ data: ${JSON.stringify(data)}`
       false
     )
   })
-  return updateDoc(doc(fuego.db, path), data)
+  return _updateDoc(doc(fuego.db, path), data)
 }
 
-const deleteDocument = <
-  Data extends object = {},
+const deleteDoc = <
+  Data extends DocumentData,
   Doc extends Document = Document<Data>
 >(
   path: string | null,
@@ -213,7 +220,14 @@ const deleteDocument = <
     })
   }
 
-  return deleteDoc(doc(fuego.db, path))
+  return _deleteDoc(doc(fuego.db, path))
 }
 
-export { set, update, revalidateDocument, revalidateCollection, deleteDocument }
+export {
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  revalidateDoc,
+  revalidateCollection,
+  shouldMerge,
+}

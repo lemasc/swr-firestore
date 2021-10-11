@@ -1,8 +1,10 @@
-import { FirebaseOptions, getApp, getApps, initializeApp } from "firebase/app"
-import { getFirestore, FirebaseFirestore } from "firebase/firestore";
+import { FirebaseOptions, getApp, getApps, initializeApp } from '@firebase/app'
+import { getFirestore, Firestore } from '@firebase/firestore'
 export class Fuego {
-  public db: FirebaseFirestore
+  public db: Firestore
   constructor(config: FirebaseOptions) {
-    this.db = !getApps().length ? getFirestore(initializeApp(config)) : getFirestore(getApp())
+    this.db = !getApps().length
+      ? getFirestore(initializeApp(config))
+      : getFirestore(getApp())
   }
 }
