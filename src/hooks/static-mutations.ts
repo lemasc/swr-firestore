@@ -7,6 +7,7 @@ import type {
 } from '@firebase/firestore'
 import {
   doc,
+  collection,
   setDoc as _setDoc,
   updateDoc as _updateDoc,
   deleteDoc as _deleteDoc,
@@ -62,13 +63,6 @@ const setDoc = <
 
   const isDocument = path.trim().split('/').filter(Boolean).length % 2 === 0
 
-  if (!isDocument)
-    throw new Error(
-      `[@nandorojo/swr-firestore] error: called setDoc() function with path: ${path}. This is not a valid document path. 
-      
-data: ${JSON.stringify(data)}`
-    )
-
   if (!ignoreLocalMutation) {
     mutate(
       path,
@@ -83,31 +77,31 @@ data: ${JSON.stringify(data)}`
     )
   }
 
-  let collection: string | string[] = path.split(`/`).filter(Boolean)
-  const docId = collection.pop() // remove last item, which is the /doc-id
-  collection = collection.join('/')
+  const ref = isDocument ? doc(fuego.db, path) : doc(collection(fuego.db, path))
 
-  collectionCache.getSWRKeysFromCollectionPath(collection).forEach((key) => {
-    mutate(
-      key,
-      (currentState: Doc[] = empty.array) => {
-        // don't mutate the current state if it doesn't include this doc
-        // why? to prevent creating a new reference of the state
-        // creating a new reference could trigger unnecessary re-renders
-        if (!currentState.some((doc) => doc.id === docId)) {
-          return currentState
-        }
-        return currentState.map((document = empty.object as Doc) => {
-          if (document.id === docId) {
-            if (!shouldMerge(options)) return document
-            return { ...document, ...data }
+  collectionCache
+    .getSWRKeysFromCollectionPath(ref.parent.path)
+    .forEach((key) => {
+      mutate(
+        key,
+        (currentState: Doc[] = empty.array) => {
+          // don't mutate the current state if it doesn't include this doc
+          // why? to prevent creating a new reference of the state
+          // creating a new reference could trigger unnecessary re-renders
+          if (!currentState.some((doc) => doc.id === ref.id)) {
+            return currentState
           }
-          return document
-        })
-      },
-      false
-    )
-  })
+          return currentState.map((document = empty.object as Doc) => {
+            if (document.id === ref.id) {
+              if (!shouldMerge(options)) return document
+              return { ...document, ...data }
+            }
+            return document
+          })
+        },
+        false
+      )
+    })
   return _setDoc(doc(fuego.db, path), data, options)
 }
 

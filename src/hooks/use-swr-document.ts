@@ -97,7 +97,7 @@ export const getDoc = async <
       {
         ...docData,
         id: doc.id,
-        exists: doc.exists,
+        exists: doc.exists(),
         hasPendingWrites: doc.metadata.hasPendingWrites,
         __snapshot: ignoreFirestoreDocumentSnapshotField ? undefined : doc,
       } as unknown as Doc,
@@ -159,7 +159,7 @@ const createListenerAsync = async <Doc extends Document = Document>(
         {
           ...docData,
           id: doc.id,
-          exists: doc.exists,
+          exists: doc.exists(),
           hasPendingWrites: doc.metadata.hasPendingWrites,
           __snapshot: ignoreFirestoreDocumentSnapshotField ? undefined : doc,
         } as unknown as Doc,
