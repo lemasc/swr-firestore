@@ -102,7 +102,7 @@ const setDoc = <
         false
       )
     })
-  return _setDoc(doc(fuego.db, path), data, options)
+  return _setDoc(ref, data, options)
 }
 
 const updateDoc = <
