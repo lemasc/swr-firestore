@@ -1,6 +1,6 @@
 {
   "name": "swr-firestore-v9",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "SWR React hooks for Firestore, that you can actually use in production, on every screen.",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
@@ -46,6 +46,7 @@
     "typescript": "^4.4.3"
   },
   "peerDependencies": {
+    "firebase": "^9.1.0",
     "react": "*"
   },
   "jest": {

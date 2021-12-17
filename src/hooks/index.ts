@@ -1,7 +1,6 @@
 export { getDoc, useDocument } from './use-swr-document'
-export {
-  getDocs,
-  useCollection,
+export { getDocs, useCollection } from './use-swr-collection'
+export type {
   CollectionSWROptions,
   CollectionQueryType,
 } from './use-swr-collection'
