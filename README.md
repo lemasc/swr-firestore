@@ -224,9 +224,9 @@ const { data, add } = useCollection('albums', {
   where: ['artist', '==', 'Drake'],
 })
 
-const onPress = () => {
+const onPress = async () => {
   // calling this will automatically update your global cache & Firestore
-  add({
+  const documentId = await add({
     title: 'Dark Lane Demo Tapes',
     artist: 'Drake',
     year: '2020',
@@ -350,6 +350,37 @@ if (data) {
 ```
 
 You can do the same for `useCollection` and `useCollectionGroup`. The snapshot will be on each item in the `data` array.
+
+This comes in handy when you are working with forms for data edits:
+
+**With Formik**
+```js
+const { data, set } = useDocument('users/fernando', {
+  ignoreFirestoreDocumentSnapshotField: false,
+})
+
+if (!data) return <Loading />
+
+<Formik
+  initialValues={data.__snapshot.data()}
+  ...
+/>
+```
+
+**With state and hooks**
+```js
+const { data, set } = useDocument('users/fernando', {
+  ignoreFirestoreDocumentSnapshotField: false,
+})
+
+const [values, setValues] = useState(null);
+
+useEffect(() => {
+  if (data) {
+    setValues(data.__snapshot.data());
+  }
+}, [data]);
+```
 
 ### Paginate a collection:
 
@@ -649,7 +680,7 @@ _(optional)_ A dictionary with added options for the request. See the [options a
 
 Returns a dictionary with the following values:
 
-- `add(data)`: Extends the Firestore document [`add` function](https://firebase.google.com/docs/firestore/manage-data/add-data).
+- `add(data)`: Extends the Firestore document [`add` function](https://firebase.google.com/docs/firestore/manage-data/add-data). Returns the added document ID(s).
   - It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular `add` function provided by Firestore.
 
 The returned dictionary also includes the following [from `useSWR`](https://github.com/zeit/swr#return-values):

@@ -267,8 +267,8 @@ export type CollectionSWROptions<Doc extends Document = Document> =
  * Call a Firestore Collection
  * @template Doc
  * @param path String if the document is ready. If it's not ready yet, pass `null`, and the request won't start yet.
- * @param [query] - Dictionary with options to query the collection.
- * @param [options] - Dictionary with option `listen`. If true, it will open a socket listener. Also takes any of SWR's options.
+ * @param [query] - Dictionary with options to query the collection *AND* optionally accepts `listen`, `parseDates`, and `ignoreFirestoreDocumentSnapshotField` as well.
+ * @param [options] - Dictionary of options to pass to the underlying useSWR library.
  */
 export const useCollection = <
   Data extends DocumentData,
@@ -475,10 +475,13 @@ export const useCollection = <
    * - It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular `add` function provided by Firestore.
    */
   const add = useCallback(
-    (data: Data | Data[]) => {
+    <T extends Data | Data[]>(
+      data: T
+    ): Promise<T extends Data ? string : string[]> | null => {
       if (!path) return null
 
-      const dataArray = Array.isArray(data) ? data : [data]
+      const multiple = Array.isArray(data)
+      const dataArray = multiple ? (data as T[]) : [data]
 
       const ref = collection(fuego.db, path)
 
@@ -506,7 +509,12 @@ export const useCollection = <
         batch.set(_doc(ref, id), doc)
       })
 
-      return batch.commit()
+      return batch.commit().then(() => {
+        const ids = docsToAdd.map(({ id }) => id)
+        const returnValue = multiple ? ids : ids[0]
+
+        return returnValue as T extends Data ? string : string[]
+      })
     },
     [listen, mutate, path]
   )
