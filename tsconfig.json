@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
+    "baseUrl": "./src",
     "paths": {
-      "@nandorojo/swr-firestore": ["./src/index"]
+      "@lemasc/swr-firestore": ["./src"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
@@ -11,6 +11,7 @@
     "jsx": "react",
     "lib": ["esnext"],
     "module": "esnext",
+    "isolatedModules": true,
     "moduleResolution": "node",
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,

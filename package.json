@@ -1,6 +1,6 @@
 {
-  "name": "swr-firestore-v9",
-  "version": "1.0.5",
+  "name": "@lemasc/swr-firestore",
+  "version": "2.0.0",
   "description": "SWR React hooks for Firestore, that you can actually use in production, on every screen.",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
@@ -8,8 +8,21 @@
   "react-native": "src/index.ts",
   "files": [
     "src",
-    "lib"
+    "lib",
+    "constraints"
   ],
+  "exports": {
+    ".": {
+      "import": "./lib/module/index.js",
+      "require": "./lib/commonjs/index.js",
+      "types": "./lib/typescript/index.d.ts"
+    },
+    "./constraints": {
+      "import": "./lib/module/constraints/index.js",
+      "require": "./lib/commonjs/constraints/index.js",
+      "types": "./lib/typescript/constraints/index.d.ts"
+    }
+  },
   "scripts": {
     "test": "jest",
     "typescript": "tsc --noEmit",
@@ -78,6 +91,6 @@
   "dependencies": {
     "lodash.get": "^4.4.2",
     "lodash.set": "^4.3.2",
-    "swr": "^1.0.0"
+    "swr": "^1.1.0"
   }
 }

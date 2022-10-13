@@ -1,4 +1,4 @@
 export const empty = {
-	object: {},
-	array: [],
+  object: {},
+  array: [],
 }

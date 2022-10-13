@@ -1,8 +1,33 @@
-import type { DocumentData, QueryDocumentSnapshot } from '@firebase/firestore'
+import type { DocumentSnapshot } from '@firebase/firestore'
 
-export type Document<T = DocumentData> = T & {
+type BaseFields = {
   id: string
-  exists?: boolean
   hasPendingWrites?: boolean
-  __snapshot?: QueryDocumentSnapshot
+  __snapshot?: DocumentSnapshot
+}
+
+type ValidatedDocument<
+  T extends Record<string, unknown> = Record<string, unknown>
+> = BaseFields &
+  T & {
+    exists: true
+    validated: true
+  }
+
+type UnvalidatedDocument = BaseFields & {
+  exists: boolean
+  validated: false
+}
+
+export type Document<
+  T extends Record<string, unknown> = Record<string, unknown>
+> = ValidatedDocument<T> | UnvalidatedDocument
+
+/**
+ * Returns true if the given document is existed and validated against the schema.
+ */
+export const isDocumentValid = <Data extends Record<string, unknown>>(
+  doc: Document<Data>
+): doc is ValidatedDocument<Data> => {
+  return doc.exists && doc.validated
 }
