@@ -1,23 +1,13 @@
-# SWR + Firestore (v9)
+# SWR + Firestore
 
 ```js
 const { data } = useDocument('users/fernando')
 ```
 
-This is the fork of [swr-firestore](https://github.com/nandorojo/swr-firestore) with support for Firebase Modular SDK (v9).
+This is the fork of [swr-firestore](https://github.com/nandorojo/swr-firestore) with support for Firebase Modular SDK (v9) and inprovements.
 
-## Breaking changes with v0.x
-- Use the stable channel of firebase (v9.1.x)
-- Update SWR to version 1.
-- useDocument and useCollection won't return `revalidate()` [due to SWR changes](https://swr.vercel.app/blog/swr-v1#change-revalidate-to-mutate).
-- API functions renamed for similarity with the new firebase SDK.
-  * `set()` is now `setDoc()`
-  * `update()` is now `updateDoc()`
-  * `deleteDocument()` is now `deleteDoc()`
-  * `revalidateDocument()` is now `revalidateDoc()`
-  * `getDocument()` is now `getDoc()`
-  * `getCollection()` is now `getDocs()`
-- Use `getFuego()` to get the current database instance instead of importing `fuego` variable directly.
+## Breaking changes with recent versions.
+The old version of this library, `swr-firestore-v9`, has been deprecated. Please upgrade to the new package, `@lemasc/swr-firestore`, and has follow the migrations as explained in [CHANGELOG.md](/CHANGELOG.md) and see the new examples below.
 
 **It's that easy.**
 
@@ -32,7 +22,7 @@ You can now fetch, add, and mutate Firestore data with zero boilerplate.
 ## Features
 
 - Shared state / cache between collection and document queries [(instead of Redux??)](#shared-global-state-between-documents-and-collections)
-- Works with both **React** and **React Native**.
+- Works with both **React** and ~~React Native~~. React Native use namespaced version of Firebase. I'll made a discussion about this soon.
 - Offline mode with Expo [(without detaching!)](https://github.com/nandorojo/expo-firestore-offline-persistence/blob/master/README.md#usage-with-nandorojoswr-firestore)
 - Blazing fast
 - Query collection groups (**new** in `0.14.x`!)
@@ -43,7 +33,6 @@ You can now fetch, add, and mutate Firestore data with zero boilerplate.
 - No more parsing `document.data()` from Firestore requests
 - Server-side rendering (SSR or SSG) with Next.js [(example)](https://github.com/nandorojo/swr-firestore/issues/17)
 - Automatic date parsing (no more `.toDate()`)
-- Firebase v8 support (see [#59](https://github.com/nandorojo/swr-firestore/issues/59#issuecomment-719950071))
 
 ...along with the features touted by Vercel's incredible [SWR](https://github.com/zeit/swr#introduction) library:
 
@@ -65,10 +54,10 @@ _"With SWR, components will get a stream of data updates constantly and automati
 ## Installation
 
 ```sh
-yarn add swr-firestore-v9
+yarn add @lemasc/swr-firestore
 
 # or
-npm install swr-firestore-v9
+npm install @lemasc/swr-firestore
 ```
 
 Install firebase:
@@ -82,54 +71,32 @@ yarn add firebase
 # or
 npm i firebase
 ```
+This library is tree-shakable. Means that if parts of the library that doesn't import to your code won't be included in your bundle too.
 
-## Set up
+## Setup
 
-In the root of your app, **create an instance of Fuego** and pass it to the **FuegoProvider**.
-
-If you're using `next.js`, this goes in your `pages/_app.js` file.
-
-`App.js`
-
-```jsx
-import React from 'react'
-import 'firebase/firestore'
-import 'firebase/auth'
-import { Fuego, FuegoProvider } from 'swr-firestore-v9'
-
-const firebaseConfig = {
-  // put yours here
-}
-
-const fuego = new Fuego(firebaseConfig)
-
-export default function App() {
-  return (
-    <FuegoProvider fuego={fuego}>
-      <YourAppHere />
-    </FuegoProvider>
-  )
-}
-```
-
-Make sure to create your `Fuego` instance outside of the component. The only argument `Fuego` takes is your firebase `config` variable.
-
-Under the hood, this step initializes firebase for you. No need to call `firebase.initializeApp`.
+This library expects you to intialize Firebase  app with your own. This depends on your Javascript Framework. `@lemasc/swr-firestore` will automatically use your firebase `[DEFAULT]` instance for initializing firestore.
 
 ## Basic Usage
 
-_Assuming you've already completed the setup..._
+Examples are written in TypeScript. Remove types if you are using vanilla JavaScript.
 
 ### Subscribe to a document
 
-```js
+```tsx
 import React from 'react'
-import { useDocument } from 'swr-firestore-v9'
+import { useDocument } from '@lemasc/swr-firestore'
 import { Text } from 'react-native'
+
+type UserProfile = {
+  name: string,
+  email: string,
+  isAdmin?: boolean
+}
 
 export default function User() {
   const user = { id: 'Fernando' }
-  const { data, update, error } = useDocument(`users/${user.id}`, {
+  const { data, update, error } = useDocument<User>(`users/${user.id}`, {
     listen: true,
   })
 
@@ -142,13 +109,13 @@ export default function User() {
 
 ### Get a collection
 
-```js
+```tsx
 import React from 'react'
 import { useCollection } from 'swr-firestore-v9'
 import { Text } from 'react-native'
 
 export default function UserList() {
-  const { data, update, error } = useCollection(`users`)
+  const { data, error } = useCollection<User>(`users`)
 
   if (error) return <Text>Error!</Text>
   if (!data) return <Text>Loading...</Text>
@@ -175,11 +142,21 @@ const { data } = useDocument(`users/${user.id}`, { listen: true })
 
 ### Make a complex collection query:
 
+**Notice that we are importing from `@lemasc/swr-firestore/constraints`!** For more information, see [Query Constraints](#query-constraints) for more information.
+
 ```typescript
+import {
+  where,
+  limit,
+  orderBy
+} from "@lemasc/swr-firestore/constraints"
+
 const { data } = useCollection('users', {
-  where: ['name', '==', 'fernando'],
-  limit: 10,
-  orderBy: ['age', 'desc'],
+  constraints: [
+    where('name', '==', 'fernando'),
+    orderBy('age', 'desc'),
+    limit(10),
+  ],
   listen: true,
 })
 ```
@@ -194,7 +171,6 @@ const { data } = useDocument('albums/nothing-was-the-same', {
   loadingTimeout: 2000,
 })
 ```
-
 ### Pass options from SWR to your collection query:
 
 ```typescript
@@ -203,10 +179,9 @@ const { data } = useCollection(
   'albums',
   {
     listen: true,
-    // you can pass multiple where conditions if you want
-    where: [
-      ['artist', '==', 'Drake'],
-      ['year', '==', '2020'],
+    constraints: [
+      where('artist', '==', 'Drake'),
+      where('year', '==', '2020'),
     ],
   },
   {
@@ -215,44 +190,6 @@ const { data } = useCollection(
     loadingTimeout: 2000,
   }
 )
-```
-
-### Add data to your collection:
-
-```typescript
-const { data, add } = useCollection('albums', {
-  where: ['artist', '==', 'Drake'],
-})
-
-const onPress = async () => {
-  // calling this will automatically update your global cache & Firestore
-  const documentId = await add({
-    title: 'Dark Lane Demo Tapes',
-    artist: 'Drake',
-    year: '2020',
-  })
-}
-```
-
-### Set document data:
-
-```typescript
-const { data, set, update } = useDocument('albums/dark-lane-demo-tapes')
-
-const onReleaseAlbum = () => {
-  // calling this will automatically update your global cache & Firestore
-  set(
-    {
-      released: true,
-    },
-    { merge: true }
-  )
-
-  // or you could call this:
-  update({
-    released: true,
-  })
-}
 ```
 
 ### Use dynamic fields in a request:
@@ -382,13 +319,14 @@ useEffect(() => {
 }, [data]);
 ```
 
+<!--
 ### Paginate a collection:
 
 Video [here](https://imgur.com/a/o9AlI4N).
 
 ```typescript
 import React from 'react'
-import { fuego, useCollection } from 'swr-firestore-v9'
+import { fuego, useCollection } from '@lemasc/swr-firestore'
 
 const collection = 'dump'
 const limit = 1
@@ -449,6 +387,7 @@ export default function Paginate() {
   )
 }
 ```
+-->
 
 ## Query Documents
 
@@ -456,7 +395,7 @@ You'll rely on `useDocument` to query documents.
 
 ```js
 import React from 'react'
-import { useDocument } from 'swr-firestore-v9'
+import { useDocument } from '@lemasc/swr-firestore'
 
 const user = { id: 'Fernando' }
 export default () => {
@@ -478,7 +417,6 @@ const { data, error } = useDocument(`users/${user.id}`, { listen: true })
 import {
   useDocument,
   useCollection,
-  useCollectionGroup, // 👋 new!
   revalidateDoc,
   revalidateCollection,
   // these all update BOTH Firestore & the local cache ⚡️
@@ -487,7 +425,7 @@ import {
   getFuego, // get the firebase instance used by this lib
   getDocs, // prefetch a collection, without being hooked into SWR or React
   getDoc, // prefetch a document, without being hooked into SWR or React
-} from 'swr-firestore-v9'
+} from '@lemasc/swr-firestore'
 ```
 
 ## `useDocument(path, options)`
@@ -495,9 +433,6 @@ import {
 ```js
 const {
   data,
-  set,
-  update,
-  deleteDocument,
   error,
   isValidating,
   mutate,
@@ -541,14 +476,6 @@ See Firestore's [snapshot docs](https://firebase.google.com/docs/reference/js/fi
 
 Returns a dictionary with the following values:
 
-- `set(data, SetOptions?)`: Extends the `firestore` document `set` function.
-  - You can call this when you want to edit your document.
-  - It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular Firestore `set` function.
-  - The second argument is the same as the second argument for [Firestore `set`](https://firebase.google.com/docs/firestore/manage-data/add-data#set_a_document).
-- `update(data)`: Extends the Firestore document [`update` function](https://firebase.google.com/docs/firestore/manage-data/add-data#update-data).
-  - It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular `set` function.
-- `deleteDocument()`: Extends the Firestore document [`delete` function](https://firebase.google.com/docs/firestore/manage-data/delete-data).
-  - It also updates the local cache using SWR's `mutate` by deleting your document from this query and all collection queries that have fetched this document. This will prove highly convenient over the regular `delete` function from Firestore.
 - `unsubscribe()` A function that, when called, unsubscribes the Firestore listener.
   - The function can be null, so make sure to check that it exists before calling it.
   - **Note**: This is not necessary to use. `useDocument` already unmounts the listener for you. This is only intended if you want to unsubscribe on your own.
@@ -680,8 +607,9 @@ _(optional)_ A dictionary with added options for the request. See the [options a
 
 Returns a dictionary with the following values:
 
-- `add(data)`: Extends the Firestore document [`add` function](https://firebase.google.com/docs/firestore/manage-data/add-data). Returns the added document ID(s).
-  - It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular `add` function provided by Firestore.
+- `unsubscribe()` A function that, when called, unsubscribes the Firestore listener.
+  - The function can be null, so make sure to check that it exists before calling it.
+  - **Note**: This is not necessary to use. `useCollection` already unmounts the listener for you. This is only intended if you want to unsubscribe on your own.
 
 The returned dictionary also includes the following [from `useSWR`](https://github.com/zeit/swr#return-values):
 
@@ -689,17 +617,6 @@ The returned dictionary also includes the following [from `useSWR`](https://gith
 - `error`: error thrown by fetcher (or undefined)
 - `isValidating`: if there's a request or revalidation loading
 - `mutate(data?, shouldRevalidate?)`: function to mutate the cached data
-- `unsubscribe()` A function that, when called, unsubscribes the Firestore listener.
-  - The function can be null, so make sure to check that it exists before calling it.
-  - **Note**: This is not necessary to use. `useCollection` already unmounts the listener for you. This is only intended if you want to unsubscribe on your own.
-
-## `useCollectionGroup(path, query, options)`
-
-Follows an identical API as `useCollection`, except that it leverages Firestore's collection group query for merging subcollections with the same name.
-
-To see how to use it, follow the instructions from [`useCollection`](#useCollection).
-
-See the Firestore [docs on collecttion groups](https://firebase.google.com/docs/firestore/query-data/queries) to learn more.
 
 ## `setDoc(path, data, SetOptions?)`
 
@@ -717,15 +634,6 @@ Extends the Firestore document [`updateDoc` function](https://firebase.google.co
 - It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular `updateDoc` function.
 
 This is useful if you want to update a document in a component that isn't connected to the `useDocument` hook.
-
-<!--
-## `add(path, data)`:
-
-Extends the Firestore document [`add` function](https://firebase.google.com/docs/firestore/manage-data/add-data).
-
-- It also updates the local cache using SWR's `mutate`. This will prove highly convenient over the regular `add` function.
-- Use this **instead** of `firebase.firestore().collection('users').add(data)`
--->
 
 ## `deleteDoc(path, ignoreLocalMutations = false)`
 
@@ -784,39 +692,48 @@ If you don't want to use `useCollection` in a component, you can use this functi
 
 ## TypeScript Support
 
-Create a model for your `typescript` types, and pass it as a generic to `useDocument` or `useCollection`.
+Create a model for your `typescript` types, and pass it as a generic to `useDocument` or `useCollection`. The `data` item returned from the library will automatically be type-safe.
 
-### useDocument
+When you first read your document data, properties in your model will not existed yet, as it hasn't checked as valid yet.
 
-The `data` item will include your TypeScript model (or `null`), and will also include an `id` string, an `exists` boolean, and `hasPendingWrites` boolean.
+
+To make properties on your model accessible, you must check if the document is `exists` and `validated`.
 
 ```typescript
+import { useDocument } from '@lemasc/swr-firestore'
+
 type User = {
   name: string
 }
 
 const { data } = useDocument<User>('users/fernando')
 
-if (data) {
-  const {
-    id, // string
-    name, // string
-    exists, // boolean
-    hasPendingWrites, // boolean
-  } = data
+if (!data) {
+  // The data hasn't been fetched by the hook yet. Check your SWR key.
+  return null;
 }
 
-const id = data?.id //  string | undefined
-const name = data?.name // string | undefined
-const exists = data?.exists // boolean | undefined
-const hasPendingWrites = data?.hasPendingWrites // boolean | undefind
+const id = data.id // string
+const exists = data.exists // boolean
+const validated = data.validated // boolean
+const hasPendingWrites = data.hasPendingWrites // boolean
+
+const name = data.name // error!
+// Propery 'name' doesn't existed on type 'Document<User>'
+
+if (data.exists && data.validated) {
+  const name = data.name // string, the property is now accessible.
+}
 ```
 
-### useCollection
-
-The `data` item will include your TypeScript model (or `null`), and will also include an `id` string.
+You can check this by your own, or you can use the utility function `isDocumentValid` for more convenience.
 
 ```typescript
+import {
+  isDocumentValid,
+  useDocument 
+  } from '@lemasc/swr-firestore'
+
 type User = {
   name: string
 }
@@ -824,11 +741,52 @@ type User = {
 const { data } = useCollection<User>('users')
 
 if (data) {
+  // DON'T DO THIS!
   data.forEach(({ id, name }) => {
+    // error: Property 'name' doesn't exist on type `Document<User>`.
+  });
+
+  // Instead, do this.
+  data.filter(isDocumentValid).forEach(({ id, name }) => {
     // ...
   })
 }
 ```
+
+### Validate using the schema validator.
+
+For advanced use cases, you might have a document schema using the library of your choice, and you would like to validate it against the schema.
+
+`@lemasc/swr-firestore` allows you to validate the current document data, transform if necessary, and returned back the corrected one. This is a good practice. You define your document schema, and prevent incompleted documents from breaking your applications.
+
+Typescript typings will also infered automatically, if possible.
+
+If validator returns an object, then the object will be used as a document data. If a falsy value or error was returned, the document data will be undefined.
+
+
+```tsx
+/// You can use any library of your choice.
+import { z } from "zod"
+
+const User = z.object({
+  username: z.string(),
+});
+
+const { data } = useCollection("users", {
+  listen: true
+}, {
+  validator: async (data) => {
+    return User.parse(data)
+  }
+})
+// User collections is now validated against the schema.
+```
+
+To check if the document is valid, you can check the `validated` prop, or use the utility function `isDocumentValid` as shown earlier.
+
+### Query Constraints
+
+To be documented.
 
 ## Shared global state between documents and collections
 
