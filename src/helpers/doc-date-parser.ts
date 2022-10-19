@@ -1,11 +1,7 @@
-import type {
-  DocumentData,
-  DocumentSnapshot,
-  Timestamp,
-} from '@firebase/firestore'
+import type { DocumentData, DocumentSnapshot } from '@firebase/firestore'
 import get from 'lodash.get'
 import set from 'lodash.set'
-import type { Document, FetchStaticOptions } from '../types'
+import { Document, FetchStaticOptions, isTimestamp } from '../types'
 import { isDev } from './is-dev'
 
 export function withDocumentDatesParsed<
@@ -16,13 +12,8 @@ export function withDocumentDatesParsed<
     if (typeof dateField !== 'string') return
 
     const unparsedDate = get(doc, dateField)
-    if (unparsedDate) {
-      const parsedDate: Date | undefined = (
-        unparsedDate as Timestamp
-      ).toDate?.()
-      if (parsedDate) {
-        set(doc, dateField, parsedDate)
-      }
+    if (unparsedDate && isTimestamp(unparsedDate)) {
+      set(doc, dateField, unparsedDate.toDate())
     }
   })
 
@@ -44,7 +35,7 @@ export const validateAndParseDate = async <
     parseDates,
   }: FetchStaticOptions<Data>
 ): Promise<Doc> => {
-  let docData = undefined
+  let docData: Data | undefined = undefined
   try {
     const validatedData = await validator(
       withDocumentDatesParsed(
@@ -62,12 +53,15 @@ export const validateAndParseDate = async <
   if (
     isDev &&
     docData &&
-    (docData.exists || docData.id || docData.hasPendingWrites)
+    (docData.exists ||
+      docData.validated ||
+      docData.id ||
+      docData.hasPendingWrites)
   ) {
     console.warn(
       '[@lemasc/swr-firestore] warning: Your document, ',
       document.id,
-      ' is using one of the following reserved fields: [exists, id, hasPendingWrites]. These fields are reserved. Please remove them from your documents.'
+      ' is using one of the following reserved fields: [exists, id, validated, hasPendingWrites]. These fields are reserved. Please remove them from your documents.'
     )
   }
   return {

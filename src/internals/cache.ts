@@ -6,6 +6,9 @@ export const getKeysFromCache = (path: string) => {
   return collectionCache.getSWRKeysFromCollectionPath(path)
 }
 
+/**
+ * Set or updates the document from the cache.
+ */
 export const updateDocFromCache = <
   Data extends Record<string, any>,
   Doc extends Document<Data> = Document<Data>
@@ -39,6 +42,9 @@ export const updateDocFromCache = <
   })
 }
 
+/**
+ * Removes the document from the cache.
+ */
 export const removeDocFromCache = <
   Data extends Record<string, any>,
   Doc extends Document<Data> = Document<Data>

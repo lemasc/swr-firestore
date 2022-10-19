@@ -7,7 +7,7 @@ const { data } = useDocument('users/fernando')
 This is the fork of [swr-firestore](https://github.com/nandorojo/swr-firestore) with support for Firebase Modular SDK (v9) and improvements.
 
 ## Breaking changes with recent versions.
-The old version of this library, `swr-firestore-v9`, has been deprecated. Please upgrade to the new package, `@lemasc/swr-firestore`, and has follow the migrations as explained in [CHANGELOG.md](/CHANGELOG.md) and see the new examples below.
+The old version of this library, `swr-firestore-v9`, has been deprecated. Please upgrade to the new package, `@lemasc/swr-firestore`, and follow the migrations as explained in [CHANGELOG.md](/CHANGELOG.md). Also see the new examples below.
 
 **It's that easy.**
 
@@ -75,13 +75,13 @@ This library is tree-shakable. Means that if parts of the library that doesn't i
 
 ## Setup
 
-This library expects you to intialize Firebase  app with your own. This depends on your Javascript Framework. `@lemasc/swr-firestore` will automatically use your firebase `[DEFAULT]` app instance for initializing firestore.
+This library expects you to intialize Firebase app with your own. This depends on your Javascript framework. `@lemasc/swr-firestore` will automatically use your firebase `[DEFAULT]` app instance for initializing firestore.
 
 ## Basic Usage
 
 ### Subscribe to a document
 
-```tsx
+```jsx
 import React from 'react'
 import { useDocument } from '@lemasc/swr-firestore'
 import { Text } from 'react-native'
@@ -101,13 +101,13 @@ export default function User() {
 
 ### Get a collection
 
-```tsx
+```jsx
 import React from 'react'
-import { useCollection } from 'swr-firestore-v9'
+import { useCollection } from '@lemasc/swr-firestore'
 import { Text } from 'react-native'
 
 export default function UserList() {
-  const { data, error } = useCollection<User>(`users`)
+  const { data, error } = useCollection(`users`)
 
   if (error) return <Text>Error!</Text>
   if (!data) return <Text>Loading...</Text>
@@ -170,13 +170,13 @@ const { data } = useDocument('albums/nothing-was-the-same', {
 const { data } = useCollection(
   'albums',
   {
-    listen: true,
     constraints: [
       where('artist', '==', 'Drake'),
       where('year', '==', '2020'),
     ],
   },
   {
+    listen: true,
     shouldRetryOnError: false,
     onSuccess: console.log,
     loadingTimeout: 2000,
@@ -403,7 +403,7 @@ const { data, error } = useDocument(`users/${user.id}`, { listen: true })
 
 # API
 
-See [API](API.md).
+See [API](API.md). (Haven't updated to v2 yet!)
 
 # Features
 
@@ -411,7 +411,7 @@ See [API](API.md).
 
 Create a model for your `typescript` types, and pass it as a generic to `useDocument` or `useCollection`. The `data` item returned from the library will automatically be type-safe.
 
-When you first read your document data, properties in your model will not exists, as it hasn't checked as valid yet.
+When you first read your document data, properties in your model will not exist, as it hasn't checked as valid yet. Accessing it will throw a TypeError.
 
 To make properties on your model accessible, you must check if the document is `exists` and `validated`.
 
@@ -434,8 +434,7 @@ const exists = data.exists // boolean
 const validated = data.validated // boolean
 const hasPendingWrites = data.hasPendingWrites // boolean
 
-const name = data.name // error!
-// Propery 'name' doesn't existed on type 'Document<User>'
+const name = data.name // error: Propery 'name' doesn't existed on type 'Document<User>'
 
 if (data.exists && data.validated) {
   const name = data.name // string, the property is now accessible.
@@ -457,12 +456,12 @@ type User = {
 const { data } = useCollection<User>('users')
 
 if (data) {
-  // DON'T DO THIS!
+  // ❌ DON'T DO THIS!
   data.forEach(({ id, name }) => {
     // error: Property 'name' doesn't exist on type `Document<User>`.
   });
 
-  // Instead, do this.
+  // ✅ Instead, do this.
   data.filter(isDocumentValid).forEach(({ id, name }) => {
     // ...
   })
@@ -487,9 +486,8 @@ const User = z.object({
   username: z.string(),
 });
 
-const { data } = useCollection("users", {
-  listen: true
-}, {
+const { data } = useCollection("users", undefined, {
+  listen: true,
   validator: async (data) => {
     return User.parse(data)
   }
@@ -499,9 +497,34 @@ const { data } = useCollection("users", {
 
 To check if the document is valid, you can check the `validated` prop, or use the utility function `isDocumentValid` as shown earlier.
 
-## Query Constraints
+### Query Constraints
 
-To be documented.
+`useCollection` accepts the `constraints` to be use in your query. However, Firestore constraints function aren't type-check by default. This cause lack of types when query by field, such as using `where` or `orderBy`.
+
+`@lemasc/swr-firestore/constraints` contains drop in query constraints that can be use existing Firestore queries, and also provide type-check when using the `useCollection` hook automatically.
+
+```typescript
+import {
+  where,
+  limit,
+  orderBy
+} from "@lemasc/swr-firestore/constraints"
+
+type User = {
+  username: string
+}
+
+// Pass your model to 'useCollection'
+const { data } = useCollection<User>('users', {
+  // Notice below!
+  constraints: [
+    where('name', '==', 'fernando'), // ✅
+    where('somefield' ,'==', 'not exists') // ❌ error!
+    limit(10),
+  ],
+  listen: true,
+})
+```
 
 ## Shared global state between documents and collections
 
