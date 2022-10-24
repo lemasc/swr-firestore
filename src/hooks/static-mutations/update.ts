@@ -1,10 +1,10 @@
 import { mutate as globalMutate } from 'swr'
 import { doc, updateDoc as _updateDoc } from '@firebase/firestore'
-import { db, empty } from '../../helpers'
+import { db, parseUpdateData } from '../../helpers'
 
 import type { UpdateData } from '@firebase/firestore'
 import type { StaticMutateOptions } from '../../types'
-import { updateDocFromCache } from '../../internals'
+import { mutateDocFromCollection } from '../../internals'
 
 const updateDoc = <Data extends Record<string, unknown>>(
   path: string | null,
@@ -19,18 +19,23 @@ const updateDoc = <Data extends Record<string, unknown>>(
   if (!ignoreLocalMutation) {
     mutateFn(
       path,
-      (prevState = empty.object) => {
-        return {
-          ...prevState,
-          ...data,
+      (prevState: Data | null) => {
+        console.log('PREV STATE', prevState)
+        if (prevState) {
+          return parseUpdateData<Data>(prevState, data, {
+            merge: true,
+            allowDotNotation: true,
+          })
         }
+        return null
       },
       false
     )
 
-    updateDocFromCache(ref.parent.path, data as any, {
+    mutateDocFromCollection(ref, data as any, {
       merge: true,
       mutate,
+      allowDotNotation: true,
     })
   }
   return _updateDoc(ref, data)

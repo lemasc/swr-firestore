@@ -1,4 +1,5 @@
 export * from './guards'
 export * from './Document'
 export * from './Options'
+export * from './MergeOptions'
 export type { CollectionQueryType, QueryConstraint } from './Collection'

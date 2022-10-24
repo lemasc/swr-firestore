@@ -31,7 +31,7 @@ You can now fetch, add, and mutate Firestore data with zero boilerplate.
 - Realtime subscriptions [(example)](#simple-examples)
 - Prevent memory leaks from Firestore subscriptions
 - No more parsing `document.data()` from Firestore requests
-- Server-side rendering (SSR or SSG) with Next.js [(example)](https://github.com/nandorojo/swr-firestore/issues/17)
+- ~~Server-side rendering (SSR or SSG) with Next.js [(example)](https://github.com/nandorojo/swr-firestore/issues/17)~~
 - Automatic date parsing (no more `.toDate()`)
 
 ...along with the features touted by Vercel's incredible [SWR](https://github.com/zeit/swr#introduction) library:
@@ -474,7 +474,7 @@ For advanced use cases, you might have a document schema using the library of yo
 
 `@lemasc/swr-firestore` allows you to validate the current document data, transform if necessary, and returned back the corrected one. This is a good practice. You define your document schema, and prevent incompleted documents from breaking your applications.
 
-Typescript typings will also inferred automatically, if possible.
+TypeScript typings will also inferred automatically, if possible.
 
 If validator returns an object, then the object will be used as a document data. If a falsy value or error was returned, the document data will be undefined.
 
@@ -516,7 +516,6 @@ type User = {
 
 // Pass your model to 'useCollection'
 const { data } = useCollection<User>('users', {
-  // Notice below!
   constraints: [
     where('name', '==', 'fernando'), // ✅
     where('somefield' ,'==', 'not exists') // ❌ error!

@@ -1,22 +1,28 @@
 import { mutate as globalMutate } from 'swr'
 import { doc, setDoc as _setDoc } from '@firebase/firestore'
-import { db, empty } from '../../helpers'
+import { db, empty, parseUpdateData } from '../../helpers'
 
-import type { SetOptions } from '@firebase/firestore-types'
-import type { Document, StaticMutateOptions } from '../../types'
-import { updateDocFromCache } from '../../internals'
+import type { PartialWithFieldValue } from '@firebase/firestore'
+import {
+  CacheUpdateOptions,
+  Document,
+  isMergeFieldOptions,
+  isMergeOptions,
+  StaticMutateOptions,
+} from '../../types'
+import { mutateDocFromCollection } from '../../internals'
 
 const setDoc = <
   Data extends Record<string, unknown>,
   Doc extends Document = Document<Data>
 >(
   path: string | null,
-  data: Partial<Data>,
+  data: PartialWithFieldValue<Data>,
   {
     ignoreLocalMutation,
     mutate,
     ...options
-  }: SetOptions & StaticMutateOptions = {}
+  }: CacheUpdateOptions<Data> & StaticMutateOptions = {}
 ) => {
   if (path === null) return null
 
@@ -27,17 +33,16 @@ const setDoc = <
     mutateFn(
       path,
       (prevState = empty.object) => {
-        if (!options.merge) return data
-        return {
-          ...prevState,
-          ...data,
+        if (isMergeOptions(options) || isMergeFieldOptions(options)) {
+          return parseUpdateData(prevState, data as any, options)
         }
+        return prevState
       },
       false
     )
-    updateDocFromCache<Data, Doc>(ref.parent.path, data as any, {
+    mutateDocFromCollection<Data, Doc>(ref, data as any, {
       mutate,
-      merge: options.merge,
+      ...options,
     })
   }
 

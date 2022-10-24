@@ -6,7 +6,7 @@ type BaseFields = {
   __snapshot?: DocumentSnapshot
 }
 
-type ValidatedDocument<
+export type ValidatedDocument<
   T extends Record<string, unknown> = Record<string, unknown>
 > = BaseFields &
   T & {

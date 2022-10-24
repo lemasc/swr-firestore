@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## v2.1.0
+- feat: Add beta `FieldValue` and `mergeFields` (dot-notation field updates) support for static mutations.
+
 ## v2.0.0
 ### Breaking changes
 - `@lemasc/swr-firestore` no longer requires `Fuego` class and wrapping root component with `FuegoProvider`. It will use the `[DEFAULT]` app instance automatically. Initialize it somewhere before trying to use in your hook.

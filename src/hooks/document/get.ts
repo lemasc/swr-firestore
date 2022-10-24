@@ -1,5 +1,5 @@
 import { doc, getDoc } from '@firebase/firestore'
-import { updateDocFromCache } from '../../internals/cache'
+import { mutateDocFromCollection } from '../../internals/cache'
 import { db, validateAndParseDate } from '../../helpers'
 import type {
   FetchStaticOptions,
@@ -16,6 +16,6 @@ export const getDocument = async <
 ) => {
   const document = await getDoc(doc(db(), path))
   const data = await validateAndParseDate<Data, Doc>(document, options)
-  updateDocFromCache(document.ref.parent.path, data, options)
+  mutateDocFromCollection(document.ref, data, options)
   return data
 }

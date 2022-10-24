@@ -3,7 +3,7 @@ import type { Unsubscribe } from '@firebase/firestore'
 import { doc, onSnapshot } from '@firebase/firestore'
 import { db, validateAndParseDate } from '../../helpers'
 import type { FetchStaticOptions, Document, StaticSWRConfig } from '../../types'
-import { updateDocFromCache } from '../../internals'
+import { mutateDocFromCollection } from '../../internals'
 
 type ListenerReturnType<Doc extends Document = Document> = {
   initialData: Doc
@@ -22,7 +22,7 @@ export const createDocumentListener = async <
     const unsubscribe = onSnapshot(doc(db(), path), async (doc) => {
       const data = await validateAndParseDate<Data, Doc>(doc, options)
       mutate(path, data, false)
-      updateDocFromCache(doc.ref.parent.path, data, options)
+      mutateDocFromCollection(doc.ref, data, options)
 
       // the first time the listener fires, we resolve the promise with initial data
       resolve({

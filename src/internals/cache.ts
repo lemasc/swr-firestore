@@ -1,6 +1,14 @@
 import { mutate as globalMutate } from 'swr'
-import { Document, StaticSWRConfig } from '../types'
+import {
+  CacheUpdateOptions,
+  Document,
+  isMergeFieldOptions,
+  isMergeOptions,
+  StaticSWRConfig,
+} from '../types'
 import { collectionCache } from '../classes/Cache'
+import { parseUpdateData } from '../helpers'
+import { DocumentReference } from '@firebase/firestore'
 
 export const getKeysFromCache = (path: string) => {
   return collectionCache.getSWRKeysFromCollectionPath(path)
@@ -9,28 +17,33 @@ export const getKeysFromCache = (path: string) => {
 /**
  * Set or updates the document from the cache.
  */
-export const updateDocFromCache = <
+export const mutateDocFromCollection = <
   Data extends Record<string, any>,
   Doc extends Document<Data> = Document<Data>
 >(
-  path: string,
-  data: Doc,
-  { merge, mutate = globalMutate }: StaticSWRConfig & { merge?: boolean }
+  ref: DocumentReference,
+  data: Data,
+  {
+    mutate = globalMutate,
+    ...options
+  }: StaticSWRConfig & CacheUpdateOptions<Data>
 ) => {
+  const path = ref.parent.path
+  const docId = ref.id
   return getKeysFromCache(path).forEach((key) => {
     mutate(
       key,
-      (currentState: Doc[]): Doc[] => {
+      (currentState: Doc[]) => {
         // don't mutate the current state if it doesn't include this doc
         // why? to prevent creating a new reference of the state
         // creating a new reference could trigger unnecessary re-renders
-        if (!currentState.some((doc) => doc.id === data.id)) {
+        if (!currentState.some((doc) => doc.id === docId)) {
           return currentState
         }
         return currentState.map((document) => {
           if (document.id === data.id) {
-            if (merge) {
-              return { ...document, ...data }
+            if (isMergeOptions(options) || isMergeFieldOptions(options)) {
+              return parseUpdateData(document, data as any, options)
             }
             return data
           }
@@ -45,14 +58,15 @@ export const updateDocFromCache = <
 /**
  * Removes the document from the cache.
  */
-export const removeDocFromCache = <
+export const deleteDocFromCollection = <
   Data extends Record<string, any>,
   Doc extends Document<Data> = Document<Data>
 >(
-  path: string,
-  docId: string,
+  ref: DocumentReference,
   { mutate = globalMutate }: StaticSWRConfig
 ) => {
+  const path = ref.parent.path
+  const docId = ref.id
   return getKeysFromCache(path).forEach((key) => {
     mutate(
       key,

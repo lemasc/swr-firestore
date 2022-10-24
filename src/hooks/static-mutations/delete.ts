@@ -2,7 +2,7 @@ import { mutate as globalMutate } from 'swr'
 import { db } from '../../helpers'
 import { doc, deleteDoc as _deleteDoc } from '@firebase/firestore'
 import type { StaticMutateOptions } from '../../types'
-import { removeDocFromCache } from '../../internals'
+import { deleteDocFromCollection } from '../../internals'
 
 const deleteDoc = (
   path: string | null,
@@ -14,7 +14,7 @@ const deleteDoc = (
   const mutateFn = mutate ?? globalMutate
   if (!ignoreLocalMutation) {
     mutateFn(path, null, false)
-    removeDocFromCache(ref.parent.path, ref.id, { mutate })
+    deleteDocFromCollection(ref, { mutate })
   }
 
   return _deleteDoc(ref)

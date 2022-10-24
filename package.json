@@ -1,6 +1,6 @@
 {
   "name": "@lemasc/swr-firestore",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "SWR React hooks for Firestore, that you can actually use in production, on every screen.",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
@@ -43,8 +43,7 @@
   "homepage": "https://github.com/lemasc/swr-firestore#readme",
   "devDependencies": {
     "@types/jest": "^27.0.2",
-    "@types/lodash.get": "^4.4.6",
-    "@types/lodash.set": "^4.3.6",
+    "@types/lodash": "^4.14.186",
     "@types/react": "^17.0.27",
     "@types/react-native": "0.65.5",
     "eslint": "^8.0.0",
@@ -89,8 +88,7 @@
     ]
   },
   "dependencies": {
-    "lodash.get": "^4.4.2",
-    "lodash.set": "^4.3.2",
+    "lodash": "^4.17.21",
     "swr": "^1.1.0"
   }
 }
