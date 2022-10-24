@@ -20,7 +20,6 @@ const updateDoc = <Data extends Record<string, unknown>>(
     mutateFn(
       path,
       (prevState: Data | null) => {
-        console.log('PREV STATE', prevState)
         if (prevState) {
           return parseUpdateData<Data>(prevState, data, {
             merge: true,
