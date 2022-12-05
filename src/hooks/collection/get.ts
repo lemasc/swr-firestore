@@ -1,5 +1,5 @@
 import { mutate as globalMutate } from 'swr'
-import { getDocs } from '@firebase/firestore'
+import { getDocs } from '@lemasc/firebase-wrapper/firestore'
 import { createQuery } from './query'
 import { empty, validateAndParseDate } from '../../helpers'
 import type {

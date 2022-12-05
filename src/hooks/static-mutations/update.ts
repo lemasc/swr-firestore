@@ -1,8 +1,11 @@
 import { mutate as globalMutate } from 'swr'
-import { doc, updateDoc as _updateDoc } from '@firebase/firestore'
+import {
+  doc,
+  updateDoc as _updateDoc,
+} from '@lemasc/firebase-wrapper/firestore'
 import { db, parseUpdateData } from '../../helpers'
 
-import type { UpdateData } from '@firebase/firestore'
+import type { UpdateData } from '@lemasc/firebase-wrapper/firestore'
 import type { StaticMutateOptions } from '../../types'
 import { mutateDocFromCollection } from '../../internals'
 

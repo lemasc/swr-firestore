@@ -1,4 +1,4 @@
-import type { Timestamp } from '@firebase/firestore'
+import type { Timestamp } from '@lemasc/firebase-wrapper/firestore'
 
 export const isTimestamp = (arg: unknown): arg is Timestamp => {
   return (

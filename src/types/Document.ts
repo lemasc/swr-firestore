@@ -1,4 +1,4 @@
-import type { DocumentSnapshot } from '@firebase/firestore'
+import type { DocumentSnapshot } from '@lemasc/firebase-wrapper/firestore'
 
 type BaseFields = {
   id: string

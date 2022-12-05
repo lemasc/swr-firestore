@@ -1,4 +1,4 @@
-import type { DocumentSnapshot } from '@firebase/firestore'
+import type { DocumentSnapshot } from '@lemasc/firebase-wrapper/firestore'
 import { Document, FetchStaticOptions } from '../types'
 import { withDocumentDatesParsed } from './doc-date-parser'
 import { isDev } from './is-dev'

@@ -3,7 +3,7 @@ import { isMergeFieldOptions, isMergeOptions } from '../types'
 import set from 'lodash/set'
 import { getWithFieldValue } from './fieldValue/set'
 import { setWithDotNotation } from './dot-notation'
-import { UpdateData } from '@firebase/firestore'
+import { UpdateData } from '@lemasc/firebase-wrapper/firestore'
 
 /**
  * Returns the updated data that parses common FieldValue values
@@ -33,6 +33,5 @@ export const parseUpdateData = <
       )
     }
   }
-  console.log(doc)
   return doc
 }

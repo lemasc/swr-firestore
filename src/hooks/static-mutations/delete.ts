@@ -1,6 +1,9 @@
 import { mutate as globalMutate } from 'swr'
 import { db } from '../../helpers'
-import { doc, deleteDoc as _deleteDoc } from '@firebase/firestore'
+import {
+  doc,
+  deleteDoc as _deleteDoc,
+} from '@lemasc/firebase-wrapper/firestore'
 import type { StaticMutateOptions } from '../../types'
 import { deleteDocFromCollection } from '../../internals'
 

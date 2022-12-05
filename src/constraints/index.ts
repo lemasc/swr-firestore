@@ -5,6 +5,6 @@ export {
   endBefore,
   limit,
   limitToLast,
-} from '@firebase/firestore'
+} from '@lemasc/firebase-wrapper/firestore'
 export * from './orderBy'
 export * from './where'

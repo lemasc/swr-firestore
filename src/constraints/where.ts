@@ -1,5 +1,8 @@
-import type { FieldPath, WhereFilterOp } from '@firebase/firestore'
-import { where as _where } from '@firebase/firestore'
+import type {
+  FieldPath,
+  WhereFilterOp,
+} from '@lemasc/firebase-wrapper/firestore'
+import { where as _where } from '@lemasc/firebase-wrapper/firestore'
 import { TypedQueryConstraint } from '../types/Collection'
 
 /**

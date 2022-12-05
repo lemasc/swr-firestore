@@ -2,7 +2,7 @@ import type { Fetcher, Key, SWRConfiguration } from 'swr'
 import useSWR, { useSWRConfig } from 'swr'
 import type { MutableRefObject } from 'react'
 import { useEffect, useRef } from 'react'
-import type { Unsubscribe } from '@firebase/firestore'
+import type { Unsubscribe } from '@lemasc/firebase-wrapper/firestore'
 import type { Document, FetchHookOptions } from '../types'
 
 type FetcherResponse<Data = unknown> = Data | Promise<Data>

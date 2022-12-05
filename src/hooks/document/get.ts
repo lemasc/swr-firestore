@@ -1,4 +1,4 @@
-import { doc, getDoc } from '@firebase/firestore'
+import { doc, getDoc } from '@lemasc/firebase-wrapper/firestore'
 import { mutateDocFromCollection } from '../../internals/cache'
 import { db, validateAndParseDate } from '../../helpers'
 import type {

@@ -3,7 +3,7 @@ import {
   DocumentData,
   DocumentSnapshot,
   Unsubscribe,
-} from '@firebase/firestore'
+} from '@lemasc/firebase-wrapper/firestore'
 import type { ScopedMutator } from 'swr/dist/types'
 
 export type StaticSWRConfig = {

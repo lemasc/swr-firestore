@@ -1,6 +1,6 @@
 import type { SWRConfiguration } from 'swr'
 import { useSWRConfig } from 'swr'
-import type { Unsubscribe } from '@firebase/firestore'
+import type { Unsubscribe } from '@lemasc/firebase-wrapper/firestore'
 import { useRef, useEffect, useMemo } from 'react'
 import { useFirestoreInternal } from '../../internals'
 import { empty } from '../../helpers'

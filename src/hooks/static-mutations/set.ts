@@ -1,8 +1,8 @@
 import { mutate as globalMutate } from 'swr'
-import { doc, setDoc as _setDoc } from '@firebase/firestore'
+import { doc, setDoc as _setDoc } from '@lemasc/firebase-wrapper/firestore'
 import { db, empty, parseUpdateData } from '../../helpers'
 
-import type { PartialWithFieldValue } from '@firebase/firestore'
+import type { PartialWithFieldValue } from '@lemasc/firebase-wrapper/firestore'
 import {
   CacheUpdateOptions,
   Document,

@@ -22,7 +22,7 @@ You can now fetch, add, and mutate Firestore data with zero boilerplate.
 ## Features
 
 - Shared state / cache between collection and document queries [(instead of Redux??)](#shared-global-state-between-documents-and-collections)
-- Works with both **React** and ~~React Native~~. React Native uses namespaced version of Firebase. I'll made a discussion about this soon.
+- Works with both **React** and ~~React Native~~. See the ongoing [discussion](https://github.com/lemasc/swr-firestore/discussions/6).
 - Offline mode with Expo [(without detaching!)](https://github.com/nandorojo/expo-firestore-offline-persistence/blob/master/README.md#usage-with-nandorojoswr-firestore)
 - Blazing fast
 - Query collection groups (**new** in `0.14.x`!)

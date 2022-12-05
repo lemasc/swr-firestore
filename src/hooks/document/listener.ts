@@ -1,6 +1,6 @@
 import { mutate as globalMutate } from 'swr'
-import type { Unsubscribe } from '@firebase/firestore'
-import { doc, onSnapshot } from '@firebase/firestore'
+import type { Unsubscribe } from '@lemasc/firebase-wrapper/firestore'
+import { doc, onSnapshot } from '@lemasc/firebase-wrapper/firestore'
 import { db, validateAndParseDate } from '../../helpers'
 import type { FetchStaticOptions, Document, StaticSWRConfig } from '../../types'
 import { mutateDocFromCollection } from '../../internals'

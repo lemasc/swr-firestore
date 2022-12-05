@@ -1,4 +1,9 @@
-import { collection, collectionGroup, query, Query } from '@firebase/firestore'
+import {
+  collection,
+  collectionGroup,
+  query,
+  Query,
+} from '@lemasc/firebase-wrapper/firestore'
 import type { CollectionQueryType } from '../../types'
 import { db } from '../../helpers'
 

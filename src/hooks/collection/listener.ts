@@ -1,6 +1,6 @@
 import { mutate as globalMutate } from 'swr'
-import type { Unsubscribe } from '@firebase/firestore'
-import { onSnapshot } from '@firebase/firestore'
+import type { Unsubscribe } from '@lemasc/firebase-wrapper/firestore'
+import { onSnapshot } from '@lemasc/firebase-wrapper/firestore'
 import type {
   CollectionQueryType,
   Document,

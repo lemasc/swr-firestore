@@ -1,4 +1,4 @@
-import { QueryConstraint as Constraint } from '@firebase/firestore'
+import { QueryConstraint as Constraint } from '@lemasc/firebase-wrapper/firestore'
 
 /**
  * This is a mock `QueryConstraint` interface that also accepts a `Doc` type argument.

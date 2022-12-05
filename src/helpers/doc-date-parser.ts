@@ -1,4 +1,4 @@
-import type { DocumentData } from '@firebase/firestore'
+import type { DocumentData } from '@lemasc/firebase-wrapper/firestore'
 import get from 'lodash/get'
 import set from 'lodash/set'
 import { isTimestamp } from '../types'

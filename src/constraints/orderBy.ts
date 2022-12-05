@@ -1,5 +1,8 @@
-import type { FieldPath, OrderByDirection } from '@firebase/firestore'
-import { orderBy as _orderBy } from '@firebase/firestore'
+import type {
+  FieldPath,
+  OrderByDirection,
+} from '@lemasc/firebase-wrapper/firestore'
+import { orderBy as _orderBy } from '@lemasc/firebase-wrapper/firestore'
 import { TypedQueryConstraint } from '../types/Collection'
 
 /**

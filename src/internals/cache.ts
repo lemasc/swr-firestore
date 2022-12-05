@@ -8,7 +8,7 @@ import {
 } from '../types'
 import { collectionCache } from '../classes/Cache'
 import { parseUpdateData } from '../helpers'
-import { DocumentReference } from '@firebase/firestore'
+import { DocumentReference } from '@lemasc/firebase-wrapper/firestore'
 
 export const getKeysFromCache = (path: string) => {
   return collectionCache.getSWRKeysFromCollectionPath(path)
