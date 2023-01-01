@@ -1,5 +1,13 @@
 # CHANGELOG
 
+
+## v2.2.1
+- fix: typescript type import errors on development and compilation
+- fix: bump version `@lemasc/firebase-wrapper` for commonjs support
+
+## v2.2.0
+- feat: use `@lemasc/firebase-wrapper` for compatibility on both web and React Native environments. Not final. See the ongoing [discussion](https://github.com/lemasc/swr-firestore/discussions/6).
+
 ## v2.1.0
 - feat: Add beta `FieldValue` and `mergeFields` (dot-notation field updates) support for static mutations.
 

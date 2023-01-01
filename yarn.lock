@@ -2056,10 +2056,10 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@lemasc/firebase-wrapper@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@lemasc/firebase-wrapper/-/firebase-wrapper-1.0.1.tgz#559afa9bb67f54dfd0ee1c8945a7ae027cdebd62"
-  integrity sha512-STajybyQjmzUXg8vqdzLWpHLy1GZU2wVo8kOhOye9bm2E8OV2EVRUrWGjYp3sMu5y2Uz2IqB2DW021KXYXFNbw==
+"@lemasc/firebase-wrapper@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@lemasc/firebase-wrapper/-/firebase-wrapper-1.1.0.tgz#c3c0c13f35a9245627106cc74e8358788c80210e"
+  integrity sha512-TpfwAUicr2aA1iy/oZILdZyGv9HjD3jtar3decWiscCnOANMGZKdoSEuRpahGeudAQtq5GYBbe2DLcu49en4lw==
 
 "@nodelib/fs.scandir@2.1.3":
   version "2.1.3"

@@ -1,7 +1,7 @@
 import { mutate as globalMutate } from 'swr'
 import type { Key } from 'swr'
 import { getKeysFromCache } from '../../internals'
-import { StaticSWRConfig } from 'types'
+import { StaticSWRConfig } from '../../types'
 
 /**
  * Function that, when called, refreshes all queries that match this document path.
